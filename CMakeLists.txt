@@ -9,3 +9,4 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 
 add_subdirectory(Render)
 add_subdirectory(App)
+add_subdirectory(Kernel)

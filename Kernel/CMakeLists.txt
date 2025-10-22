@@ -1,0 +1,16 @@
+project(Kernel CUDA CXX)
+find_package(CUDAToolkit REQUIRED)
+set(CMAKE_CUDA_ARCHITECTURES 89)
+
+set(header_files
+    include/Macro.h
+    include/ImageMaker.h
+    include/KernelExports.hpp
+)
+set(source_files 
+    src/ImageMaker.cu
+)
+add_library(${PROJECT_NAME} SHARED ${source_files} ${header_files})
+target_link_libraries(${PROJECT_NAME} PUBLIC CUDA::cudart)
+target_include_directories(${PROJECT_NAME} PUBLIC include)
+target_compile_definitions(${PROJECT_NAME} PRIVATE KERNEL_EXPORTS)

@@ -17,7 +17,7 @@ public:
     void render() override;
     
     void setImage(unsigned int width, unsigned int height,
-                  const std::string& imageContent);
+                  const unsigned char* imageContent);
     void initialize(QOpenGLFunctions_4_4_Core* gl) override;
 
     protected:

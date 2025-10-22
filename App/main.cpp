@@ -13,6 +13,8 @@
 #include "Element.hpp"
 #include "Image.hpp"
 
+#include "ImageMaker.h"
+
 std::string makeImage(int width, int height) {
   std::string image;
   image.resize(width * height * 3);
@@ -43,10 +45,13 @@ int main(int argc, char **argv) {
   QApplication app(argc, argv);
   Image *image = new Image();
 
-  std::string &imageStr = makeImage(100, 100);
-  image->setImage(100, 100, imageStr);
+  int width = 1920;
+  int height = 1080;
+  Kernel::ImageMaker imageMaker;
+  imageMaker.makeImage(width, height);
+  image->setImage(width, height, imageMaker.hostId);
   RenderWindow window;
-  window.resize(1920, 1080);
+  window.resize(width, height);
   window.show();
 
   window.addElement(image);

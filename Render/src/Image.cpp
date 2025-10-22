@@ -3,7 +3,8 @@
 #include <QOpenGLFunctions_4_4_Core.h>
 
 #include <iostream>
-struct Image::Impl final {
+struct Image::Impl final
+{
   int16_t mWidth;
   int16_t mHeight;
   GLuint mProgram;
@@ -11,7 +12,7 @@ struct Image::Impl final {
   GLuint mVBO;
   GLuint mEBO;
   GLuint mImageTexture;
-  std::string mImage;
+  const unsigned char* mImage;
 
   bool mImageNeedUpdate;
 
@@ -26,40 +27,51 @@ struct Image::Impl final {
         mVBO(0),
         mEBO(0),
         mImageNeedUpdate(false),
-        mImageTexture(0) {
+        mImageTexture(0)
+  {
     mVertices =
-        {-1.0f, -1.0f, 0.0f, 0.f, 0.f, -1.0f, 1.0f,  0.0f, 0.f, 1.f,
-         1.0f,  1.0f,  0.0f, 1.f, 1.f, 1.0f,  -1.0f, 0.0f, 1.f, 0.f};
+        {-1.0f, -1.0f, 0.0f, 0.f, 0.f, -1.0f, 1.0f, 0.0f, 0.f, 1.f,
+         1.0f, 1.0f, 0.0f, 1.f, 1.f, 1.0f, -1.0f, 0.0f, 1.f, 0.f};
     mElementIndices = {0, 1, 3, 1, 2, 3};
   }
 };
 
-Image::Image() { mImpl = std::make_unique<Impl>(); }
+Image::Image()
+{
+  mImpl = std::make_unique<Impl>();
+}
 
-Image::~Image() {
-  if (mImpl->mProgram) {
+Image::~Image()
+{
+  if (mImpl->mProgram)
+  {
     mContext->glDeleteProgram(mImpl->mProgram);
   }
 
-  if (mImpl->mVAO) {
+  if (mImpl->mVAO)
+  {
     mContext->glDeleteVertexArrays(1, &mImpl->mVAO);
   }
-  if (mImpl->mVBO) {
+  if (mImpl->mVBO)
+  {
     mContext->glDeleteBuffers(1, &mImpl->mVBO);
   }
-  if (mImpl->mEBO) {
+  if (mImpl->mEBO)
+  {
     mContext->glDeleteBuffers(1, &mImpl->mEBO);
   }
 }
 
-void Image::render() {
+void Image::render()
+{
   bind();
   drawOnImage();
   unbind();
 }
 
 void Image::setImage(unsigned int width, unsigned int height,
-                     const std::string &imageContent) {
+                     const unsigned char* imageContent)
+{
   mImpl->mImage = imageContent;
 
   mImpl->mWidth = width;
@@ -67,7 +79,8 @@ void Image::setImage(unsigned int width, unsigned int height,
   mImpl->mImageNeedUpdate = true;
 }
 
-void Image::initialize(QOpenGLFunctions_4_4_Core *gl) {
+void Image::initialize(QOpenGLFunctions_4_4_Core *gl)
+{
   SuperClass::initialize(gl);
 
   // initialize program;
@@ -96,7 +109,8 @@ void Image::initialize(QOpenGLFunctions_4_4_Core *gl) {
 
   mContext->glGetProgramiv(mImpl->mProgram, GL_LINK_STATUS, &success);
 
-  if (!success) {
+  if (!success)
+  {
     mContext->glGetProgramInfoLog(mImpl->mProgram, 512, nullptr, infoLog);
     std::cerr << infoLog << std::endl;
     mContext->glDeleteProgram(mImpl->mProgram);
@@ -128,7 +142,7 @@ void Image::initialize(QOpenGLFunctions_4_4_Core *gl) {
   mContext->glEnableVertexAttribArray(0);
 
   mContext->glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat),
-                                  reinterpret_cast<const void*>(3 * sizeof(GLfloat)));
+                                  reinterpret_cast<const void *>(3 * sizeof(GLfloat)));
   mContext->glEnableVertexAttribArray(1);
   mContext->glBindVertexArray(0);
 
@@ -142,45 +156,44 @@ void Image::initialize(QOpenGLFunctions_4_4_Core *gl) {
   mInitialized = true;
 }
 
-void Image::drawOnImage() {
+void Image::drawOnImage()
+{
   mContext->glViewport(0, 0, mImpl->mWidth, mImpl->mHeight);
-  std::cout << "0 error: " << mContext->glGetError() << std::endl;
-  if (mImpl->mImageNeedUpdate) {
+  if (mImpl->mImageNeedUpdate)
+  {
     uploadImage();
   }
-  std::cout << "1 error: " << mContext->glGetError() << std::endl;
 
   mContext->glActiveTexture(GL_TEXTURE0);
   mContext->glBindTexture(GL_TEXTURE_2D, mImpl->mImageTexture);
-  std::cout << "2 error: " << mContext->glGetError() << std::endl;
 
   auto textureId = mContext->glGetUniformLocation(mImpl->mProgram, "fTexture");
   mContext->glUniform1i(textureId, 0);
-  std::cout << "3 error: " << mContext->glGetError() << std::endl;
 
   mContext->glDrawElements(GL_TRIANGLES, mImpl->mElementIndices.size(),
                            GL_UNSIGNED_INT, nullptr);
-  
-  std::cout << "4 error: " << mContext->glGetError() << std::endl;
 
 }
 
-void Image::bind() {
+void Image::bind()
+{
   mContext->glBindVertexArray(mImpl->mVAO);
   mContext->glUseProgram(mImpl->mProgram);
 }
 
-void Image::unbind() {
+void Image::unbind()
+{
   mContext->glBindVertexArray(0);
   mContext->glUseProgram(0);
 }
 
-void Image::uploadImage() {
+void Image::uploadImage()
+{
   mContext->glBindTexture(GL_TEXTURE_2D, mImpl->mImageTexture);
-  
+
   mContext->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mImpl->mWidth,
                          mImpl->mHeight, 0, GL_RGB, GL_UNSIGNED_BYTE,
-                         mImpl->mImage.data());
+                         mImpl->mImage);
   mContext->glBindTexture(GL_TEXTURE_2D, 0);
   mImpl->mImageNeedUpdate = false;
 }
