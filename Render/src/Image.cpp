@@ -69,6 +69,7 @@ void Image::setImage(unsigned int width, unsigned int height,
 
 void Image::initialize(QOpenGLFunctions_4_4_Core *gl) {
   SuperClass::initialize(gl);
+
   // initialize program;
   auto vertexShaderSource = readFile(SHADER_DIR "/vertexShader.vert");
   auto fragmentShaderSource = readFile(SHADER_DIR "/fragmentShader.frag");
@@ -93,7 +94,7 @@ void Image::initialize(QOpenGLFunctions_4_4_Core *gl) {
   int success = 0;
   char infoLog[512];
 
-  mContext->glGetProgramiv(mImpl->mProgram, GL_COMPILE_STATUS, &success);
+  mContext->glGetProgramiv(mImpl->mProgram, GL_LINK_STATUS, &success);
 
   if (!success) {
     mContext->glGetProgramInfoLog(mImpl->mProgram, 512, nullptr, infoLog);
@@ -143,19 +144,25 @@ void Image::initialize(QOpenGLFunctions_4_4_Core *gl) {
 
 void Image::drawOnImage() {
   mContext->glViewport(0, 0, mImpl->mWidth, mImpl->mHeight);
-
-  /*if (mImpl->mImageNeedUpdate) {
+  std::cout << "0 error: " << mContext->glGetError() << std::endl;
+  if (mImpl->mImageNeedUpdate) {
     uploadImage();
   }
+  std::cout << "1 error: " << mContext->glGetError() << std::endl;
 
   mContext->glActiveTexture(GL_TEXTURE0);
   mContext->glBindTexture(GL_TEXTURE_2D, mImpl->mImageTexture);
+  std::cout << "2 error: " << mContext->glGetError() << std::endl;
 
   auto textureId = mContext->glGetUniformLocation(mImpl->mProgram, "fTexture");
-  mContext->glUniform1i(textureId, 0);*/
+  mContext->glUniform1i(textureId, 0);
+  std::cout << "3 error: " << mContext->glGetError() << std::endl;
 
   mContext->glDrawElements(GL_TRIANGLES, mImpl->mElementIndices.size(),
-                           GL_UNSIGNED_BYTE, nullptr);
+                           GL_UNSIGNED_INT, nullptr);
+  
+  std::cout << "4 error: " << mContext->glGetError() << std::endl;
+
 }
 
 void Image::bind() {
@@ -170,11 +177,10 @@ void Image::unbind() {
 
 void Image::uploadImage() {
   mContext->glBindTexture(GL_TEXTURE_2D, mImpl->mImageTexture);
+  
   mContext->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mImpl->mWidth,
                          mImpl->mHeight, 0, GL_RGB, GL_UNSIGNED_BYTE,
                          mImpl->mImage.data());
-
   mContext->glBindTexture(GL_TEXTURE_2D, 0);
-
   mImpl->mImageNeedUpdate = false;
 }

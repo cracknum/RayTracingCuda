@@ -43,14 +43,12 @@ int main(int argc, char **argv) {
   QApplication app(argc, argv);
   Image *image = new Image();
 
-  // std::string &imageStr = makeImage(100, 100);
-  // int error = stbi_write_jpg("./testImage.jpg", 540, 960, 3, imageStr.data(),
-  // 0);
-  // image->setImage(1920, 1080, imageStr);
+  std::string &imageStr = makeImage(100, 100);
+  image->setImage(100, 100, imageStr);
   RenderWindow window;
   window.resize(1920, 1080);
   window.show();
 
-  // window.addElement(image);
+  window.addElement(image);
   return app.exec();
 }
