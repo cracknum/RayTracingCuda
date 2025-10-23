@@ -1,6 +1,7 @@
 project(Render)
 
 find_package(Qt5 REQUIRED COMPONENTS Core Widgets OpenGL)
+find_package(glm CONFIG REQUIRED)
 
 set(source_files
 	src/RenderWindow.cpp
@@ -20,7 +21,7 @@ set(shader_files
 )
 
 add_library(${PROJECT_NAME} SHARED ${source_files} ${header_files} ${shader_files})
-target_link_libraries(${PROJECT_NAME} PUBLIC Qt5::Core Qt5::Widgets Qt5::OpenGL)
+target_link_libraries(${PROJECT_NAME} PUBLIC Qt5::Core Qt5::Widgets Qt5::OpenGL Kernel glm::glm)
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 target_include_directories(${PROJECT_NAME} PRIVATE shader)
 target_compile_definitions(${PROJECT_NAME} PRIVATE RENDER_EXPORTS)

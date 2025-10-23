@@ -3,6 +3,7 @@ find_package(CUDAToolkit REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS OpenGL)
 set(CMAKE_CUDA_ARCHITECTURES 89)
+set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-diag-suppress=20012,1394")
 
 set(header_files
     include/Macro.h

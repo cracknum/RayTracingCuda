@@ -1,6 +1,7 @@
 #include "Image.hpp"
-
+#include "RayTracer.cuh"
 #include <QOpenGLFunctions_4_4_Core.h>
+#include <glm/glm.hpp>
 
 #include <iostream>
 struct Image::Impl final
@@ -11,8 +12,15 @@ struct Image::Impl final
   GLuint mVAO;
   GLuint mVBO;
   GLuint mEBO;
+  GLuint mPBO;
   GLuint mImageTexture;
-  const unsigned char* mImage;
+
+  Kernel::ImageInfo mImageInfo;
+  Kernel::SpaceImageInfo mSpaceImageInfo;
+
+  glm::vec3 mRrayOrigin;
+
+  Kernel::RayTracer mRayTracer;
 
   bool mImageNeedUpdate;
 
@@ -20,19 +28,27 @@ struct Image::Impl final
   std::vector<GLuint> mElementIndices;
 
   Impl(int16_t width = 0, int16_t height = 0)
-      : mWidth(width),
-        mHeight(height),
-        mProgram(0),
-        mVAO(0),
-        mVBO(0),
-        mEBO(0),
-        mImageNeedUpdate(false),
-        mImageTexture(0)
+    : mWidth(width)
+    , mHeight(height)
+    , mProgram(0)
+    , mVAO(0)
+    , mVBO(0)
+    , mEBO(0)
+    , mImageNeedUpdate(false)
+    , mImageTexture(0)
+    , mPBO(0)
   {
-    mVertices =
-        {-1.0f, -1.0f, 0.0f, 0.f, 0.f, -1.0f, 1.0f, 0.0f, 0.f, 1.f,
-         1.0f, 1.0f, 0.0f, 1.f, 1.f, 1.0f, -1.0f, 0.0f, 1.f, 0.f};
-    mElementIndices = {0, 1, 3, 1, 2, 3};
+    mVertices = { -1.0f, -1.0f, 0.0f, 0.f, 0.f, -1.0f, 1.0f, 0.0f, 0.f, 1.f, 1.0f, 1.0f, 0.0f, 1.f,
+      1.f, 1.0f, -1.0f, 0.0f, 1.f, 0.f };
+    mElementIndices = { 0, 1, 3, 1, 2, 3 };
+    mImageInfo.width = width;
+    mImageInfo.height = height;
+
+    mSpaceImageInfo.mLowerLeftCorner = glm::vec3(-2.0f, -1.0f, -1.0f);
+    mSpaceImageInfo.mHorizontal = glm::vec3(4.0f, 0.0f, 0.0f);
+    mSpaceImageInfo.mVertical = glm::vec3(0.0f, 2.0f, 0.0f);
+
+    mRrayOrigin = glm::vec3(0.0f, 0.0f, 0.0f);
   }
 };
 
@@ -60,6 +76,11 @@ Image::~Image()
   {
     mContext->glDeleteBuffers(1, &mImpl->mEBO);
   }
+  if (mImpl->mPBO)
+  {
+    mImpl->mRayTracer.unbindImagePBO(mImpl->mPBO);
+    mContext->glDeleteBuffers(1, &mImpl->mPBO);
+  }
 }
 
 void Image::render()
@@ -69,17 +90,14 @@ void Image::render()
   unbind();
 }
 
-void Image::setImage(unsigned int width, unsigned int height,
-                     const unsigned char* imageContent)
+void Image::setImage(unsigned int width, unsigned int height)
 {
-  mImpl->mImage = imageContent;
-
   mImpl->mWidth = width;
   mImpl->mHeight = height;
   mImpl->mImageNeedUpdate = true;
 }
 
-void Image::initialize(QOpenGLFunctions_4_4_Core *gl)
+void Image::initialize(QOpenGLFunctions_4_4_Core* gl)
 {
   SuperClass::initialize(gl);
 
@@ -89,10 +107,10 @@ void Image::initialize(QOpenGLFunctions_4_4_Core *gl)
 
   GLuint vertexShader = mContext->glCreateShader(GL_VERTEX_SHADER);
   GLuint fragmentShader = mContext->glCreateShader(GL_FRAGMENT_SHADER);
-  const char *vShaderC = vertexShaderSource.c_str();
+  const char* vShaderC = vertexShaderSource.c_str();
   mContext->glShaderSource(vertexShader, 1, &vShaderC, nullptr);
 
-  const char *fShaderC = fragmentShaderSource.c_str();
+  const char* fShaderC = fragmentShaderSource.c_str();
   mContext->glShaderSource(fragmentShader, 1, &fShaderC, nullptr);
 
   mContext->glCompileShader(vertexShader);
@@ -127,38 +145,44 @@ void Image::initialize(QOpenGLFunctions_4_4_Core *gl)
 
   mContext->glGenBuffers(1, &mImpl->mVBO);
   mContext->glBindBuffer(GL_ARRAY_BUFFER, mImpl->mVBO);
-  mContext->glBufferData(GL_ARRAY_BUFFER,
-                         mImpl->mVertices.size() * sizeof(GLfloat),
-                         mImpl->mVertices.data(), GL_STATIC_DRAW);
+  mContext->glBufferData(GL_ARRAY_BUFFER, mImpl->mVertices.size() * sizeof(GLfloat),
+    mImpl->mVertices.data(), GL_STATIC_DRAW);
 
   mContext->glGenBuffers(1, &mImpl->mEBO);
   mContext->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mImpl->mEBO);
-  mContext->glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                         mImpl->mElementIndices.size() * sizeof(GLuint),
-                         mImpl->mElementIndices.data(), GL_STATIC_DRAW);
+  mContext->glBufferData(GL_ELEMENT_ARRAY_BUFFER, mImpl->mElementIndices.size() * sizeof(GLuint),
+    mImpl->mElementIndices.data(), GL_STATIC_DRAW);
 
-  mContext->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat),
-                                  nullptr);
+  mContext->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), nullptr);
   mContext->glEnableVertexAttribArray(0);
 
   mContext->glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat),
-                                  reinterpret_cast<const void *>(3 * sizeof(GLfloat)));
+    reinterpret_cast<const void*>(3 * sizeof(GLfloat)));
   mContext->glEnableVertexAttribArray(1);
   mContext->glBindVertexArray(0);
 
   mContext->glGenTextures(1, &mImpl->mImageTexture);
   mContext->glBindTexture(GL_TEXTURE_2D, mImpl->mImageTexture);
+  mContext->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mImpl->mWidth, mImpl->mHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
   mContext->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
   mContext->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
   mContext->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   mContext->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  mContext->glBindTexture(GL_TEXTURE_2D, 0);
+
+  mContext->glGenBuffers(1, &mImpl->mPBO);
+  mContext->glBindBuffer(GL_PIXEL_UNPACK_BUFFER, mImpl->mPBO);
+  mContext->glBufferData(GL_PIXEL_UNPACK_BUFFER, mImpl->mWidth * mImpl->mHeight * 3, nullptr, GL_DYNAMIC_DRAW);
+  mContext->glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+
+  mImpl->mRayTracer.bindImagePBO(mImpl->mPBO);
 
   mInitialized = true;
 }
 
 unsigned int Image::getImageTexture()
 {
-    return mImpl->mImageTexture;
+  return mImpl->mImageTexture;
 }
 
 void Image::drawOnImage()
@@ -175,9 +199,7 @@ void Image::drawOnImage()
   auto textureId = mContext->glGetUniformLocation(mImpl->mProgram, "fTexture");
   mContext->glUniform1i(textureId, 0);
 
-  mContext->glDrawElements(GL_TRIANGLES, mImpl->mElementIndices.size(),
-                           GL_UNSIGNED_INT, nullptr);
-
+  mContext->glDrawElements(GL_TRIANGLES, mImpl->mElementIndices.size(), GL_UNSIGNED_INT, nullptr);
 }
 
 void Image::bind()
@@ -192,13 +214,20 @@ void Image::unbind()
   mContext->glUseProgram(0);
 }
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image_write.h"
+#include "stb_image.h"
 void Image::uploadImage()
 {
-  mContext->glBindTexture(GL_TEXTURE_2D, mImpl->mImageTexture);
+  mImpl->mRayTracer.updateImage(mImpl->mImageInfo, mImpl->mSpaceImageInfo, mImpl->mRrayOrigin);
 
-  mContext->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mImpl->mWidth,
-                         mImpl->mHeight, 0, GL_RGB, GL_UNSIGNED_BYTE,
-                         mImpl->mImage);
+  mContext->glBindBuffer(GL_PIXEL_UNPACK_BUFFER, mImpl->mPBO);
+  mContext->glBindTexture(GL_TEXTURE_2D, mImpl->mImageTexture);
+  mContext->glTexSubImage2D(
+    GL_TEXTURE_2D, 0, 0, 0, mImpl->mWidth, mImpl->mHeight, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+
   mContext->glBindTexture(GL_TEXTURE_2D, 0);
+
   mImpl->mImageNeedUpdate = false;
 }

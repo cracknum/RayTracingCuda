@@ -16,8 +16,7 @@ public:
     ~Image() override;
     void render() override;
     
-    void setImage(unsigned int width, unsigned int height,
-                  const unsigned char* imageContent);
+    void setImage(unsigned int width, unsigned int height);
     void initialize(QOpenGLFunctions_4_4_Core* gl) override;
     
     unsigned int getImageTexture();

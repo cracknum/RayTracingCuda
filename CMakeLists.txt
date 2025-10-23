@@ -1,7 +1,7 @@
 ﻿cmake_minimum_required (VERSION 3.10...3.15)
 
-# set(CMAKE_TOOLCHAIN_FILE "F:/Workspace/github/vcpkg/scripts/buildsystems/vcpkg.cmake")
-set(CMAKE_TOOLCHAIN_FILE "D:/Workspace/github/vcpkg/scripts/buildsystems/vcpkg.cmake")
+set(CMAKE_TOOLCHAIN_FILE "F:/Workspace/github/vcpkg/scripts/buildsystems/vcpkg.cmake")
+# set(CMAKE_TOOLCHAIN_FILE "D:/Workspace/github/vcpkg/scripts/buildsystems/vcpkg.cmake")
 project ("RayTracingCuda")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
