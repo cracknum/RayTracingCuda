@@ -156,6 +156,11 @@ void Image::initialize(QOpenGLFunctions_4_4_Core *gl)
   mInitialized = true;
 }
 
+unsigned int Image::getImageTexture()
+{
+    return mImpl->mImageTexture;
+}
+
 void Image::drawOnImage()
 {
   mContext->glViewport(0, 0, mImpl->mWidth, mImpl->mHeight);

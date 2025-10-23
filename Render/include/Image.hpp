@@ -19,7 +19,8 @@ public:
     void setImage(unsigned int width, unsigned int height,
                   const unsigned char* imageContent);
     void initialize(QOpenGLFunctions_4_4_Core* gl) override;
-
+    
+    unsigned int getImageTexture();
     protected:
     void drawOnImage();
     void bind();

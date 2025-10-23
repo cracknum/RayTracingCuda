@@ -1,9 +1,9 @@
-
 #include "Ray.cuh"
-#include "Render.h"
+#include "RayTracer.cuh"
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
+#include <cuda_gl_interop.h>
 namespace Kernel
 {
     __device__ bool hitSphere(const glm::vec3 &center, float radius, const Ray &r)
@@ -51,7 +51,7 @@ namespace Kernel
         imageInfo.mColor[pixelIndex + 2] = c.z * 255;
     }
 
-    void render(ImageInfo &imageInfo, const SpaceImageInfo &spaceImageInfo, const glm::vec3 &rayOrigin)
+    void RayTracer::render(ImageInfo &imageInfo, const SpaceImageInfo &spaceImageInfo, const glm::vec3 &rayOrigin)
     {
         unsigned char* devId;
         int imageSize = imageInfo.width * imageInfo.height * sizeof(unsigned char) * 3;
@@ -70,6 +70,30 @@ namespace Kernel
         cudaMemcpy(imageInfo.mColor, cImageInfo.mColor, imageSize, cudaMemcpyDeviceToHost);
 
         cudaFree(cImageInfo.mColor);
+
+    }
+
+    struct RayTracer::Impl
+    {
+
+    };
+
+    void RayTracer::bindImageTexture(GLuint texture)
+    {
+        cudaGraphicsResource* resource;
+        cudaGraphicsGLRegisterImage(&resource, texture, GL_TEXTURE_2D, cudaGraphicsRegisterFlagsWriteDiscard);
+    }
+
+    void RayTracer::unbindImageTexture(GLuint texture)
+    {
+    }
+
+    RayTracer::RayTracer()
+    {
+
+    }
+    RayTracer::~RayTracer()
+    {
 
     }
 }
