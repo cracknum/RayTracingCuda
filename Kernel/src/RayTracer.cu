@@ -20,21 +20,38 @@ __device__ bool hitSphere(const glm::vec3& center, float radius, const Ray& r)
   return (discriminant > 0.0f);
 }
 
-__device__ glm::vec3 color(const Ray& r)
+__device__ glm::vec3 color(const Ray& r, Hitable **dWorld)
 {
-  if (hitSphere(glm::vec3(0, 0, -1), 0.5, r))
+  HitRecord record;
+  if ((*dWorld)->hit(r, 0, FLT_MAX, record))
   {
-    return glm::vec3(1.0f, 0.0f, 0.0f);
+    return 0.5f*glm::vec3(record.normal.x+1.0f, record.normal.y+1.0f, record.normal.z+1.0f);
   }
+  else
+  {
+    glm::vec3 uDirection = glm::normalize(r.direction());
+    float t = 0.5f * (uDirection.y + 1.0f);
 
-  glm::vec3 uDirection = glm::normalize(r.direction());
-  float t = 0.5f * (uDirection.y + 1.0f);
+    return (1 - t) * glm::vec3(1.0f, 1.0f, 1.0f) + t * glm::vec3(0.5f, 0.7f, 1.0f);
+  }
+}
 
-  return (1 - t) * glm::vec3(1.0f, 1.0f, 1.0f) + t * glm::vec3(0.5f, 0.7f, 1.0f);
+__global__ void createWorld(Hitable** dList, Hitable** dWorld)
+{
+  *dList = new Sphere(glm::vec3(0, 0, -1), 0.5);
+  *(dList + 1) = new Sphere(glm::vec3(0, -100.5, -1), 100);
+  *dWorld = new HitableList(dList, 2);
+}
+
+__global__ void destroyWorld(Hitable** dList, Hitable** dWorld)
+{
+  delete *dList;
+  delete *(dList + 1);
+  delete *dWorld;
 }
 
 __global__ void renderInternal(
-  ImageInfo imageInfo, SpaceImageInfo spaceImageInfo, glm::vec3 rayOrigin)
+  ImageInfo imageInfo, SpaceImageInfo spaceImageInfo, glm::vec3 rayOrigin, Hitable** dWorld)
 {
   int xIndex = blockDim.x * blockIdx.x + threadIdx.x;
   int yIndex = blockDim.y * blockIdx.y + threadIdx.y;
@@ -49,23 +66,19 @@ __global__ void renderInternal(
   float x = static_cast<float>(xIndex) / static_cast<float>(imageInfo.width);
   float y = static_cast<float>(yIndex) / static_cast<float>(imageInfo.height);
 
+
+
   Ray ray(rayOrigin,
     spaceImageInfo.mLowerLeftCorner + x * spaceImageInfo.mHorizontal +
       y * spaceImageInfo.mVertical);
-  glm::vec3 c = color(ray);
+  glm::vec3 c = color(ray, dWorld);
 
   imageInfo.mColor[pixelIndex] = c.x * 255;
   imageInfo.mColor[pixelIndex + 1] = c.y * 255;
   imageInfo.mColor[pixelIndex + 2] = c.z * 255;
 }
 
-__global__ void createWorld(Hitable** dList, Hitable** dWorld)
-{
-  *dList = new Sphere(glm::vec3(0, 0, -1), 0.5);
-  *dList = new Sphere(glm::vec3(0, -100.5, -1), 100);
-  // TODO
-  *dWorld = new HitableList();
-}
+
 
 struct RayTracer::Impl
 {
@@ -99,18 +112,26 @@ void RayTracer::updateImage(ImageInfo& imageInfo, const SpaceImageInfo& spaceIma
   cudaGraphicsMapResources(1, &mImpl->mPBOResource, nullptr);
   cudaGraphicsResourceGetMappedPointer(
     reinterpret_cast<void**>(&mImpl->mImageDeviceId), &mImpl->mResourceSize, mImpl->mPBOResource);
-  int imageSize = imageInfo.width * imageInfo.height * sizeof(unsigned char) * 3;
+
+  Hitable **dList;
+  cudaMalloc(&dList, sizeof(Hitable*) * 2);
+  Hitable **dWorld;
+  cudaMalloc(&dWorld, sizeof(Hitable*));
+
+  createWorld<<<1,1>>>(dList, dWorld);
 
   ImageInfo cImageInfo = imageInfo;
   cImageInfo.mColor = mImpl->mImageDeviceId;
   dim3 blockSize(8, 8, 1);
   dim3 gridSize((imageInfo.width + 7) / 8, (imageInfo.height + 7) / 8, 1);
 
-  renderInternal<<<gridSize, blockSize>>>(cImageInfo, spaceImageInfo, rayOrigin);
+  renderInternal<<<gridSize, blockSize>>>(cImageInfo, spaceImageInfo, rayOrigin, dWorld);
   auto error = cudaGetLastError();
   std::cout << __LINE__ << cudaGetErrorName(error) << ": " << cudaGetErrorString(error) << std::endl;
   cudaDeviceSynchronize();
-
+  destroyWorld<<<1,1>>>(dList, dWorld);
+  cudaFree(dList);
+  cudaFree(dWorld);
   cudaGraphicsUnmapResources(1, &mImpl->mPBOResource, nullptr);
 
 }

@@ -28,4 +28,8 @@ add_library(${PROJECT_NAME} SHARED ${source_files} ${header_files})
 target_link_libraries(${PROJECT_NAME} PUBLIC CUDA::cudart glm::glm Qt5::OpenGL)
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 target_compile_definitions(${PROJECT_NAME} PRIVATE KERNEL_EXPORTS)
+
+#for error ptxas fatal : Unresolved extern function
+set_target_properties(${PROJECT_NAME} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+
 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-diag-suppress=20012")

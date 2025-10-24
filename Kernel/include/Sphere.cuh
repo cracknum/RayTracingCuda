@@ -7,7 +7,7 @@ class Sphere: public Hitable
     public:
     __device__ Sphere();
     __device__ Sphere(const glm::vec3& center, float radius);
-    __device__ virtual bool hit(const Ray& r, float tMin, float tMax, HitRecord& record) const;
+    __device__ bool hit(const Ray& r, float tMin, float tMax, HitRecord& record) const override;
 
     glm::vec3 mCenter;
     float mRadius;
