@@ -50,6 +50,7 @@ __global__ void renderInternal(
     spaceImageInfo.mLowerLeftCorner + x * spaceImageInfo.mHorizontal +
       y * spaceImageInfo.mVertical);
   glm::vec3 c = color(ray);
+
   imageInfo.mColor[pixelIndex] = c.x * 255;
   imageInfo.mColor[pixelIndex + 1] = c.y * 255;
   imageInfo.mColor[pixelIndex + 2] = c.z * 255;
@@ -66,10 +67,10 @@ void RayTracer::render(
 
   ImageInfo cImageInfo = imageInfo;
   cImageInfo.mColor = devId;
-  dim3 threadSize(8, 8, 1);
-  dim3 blockSize((imageInfo.width + 7) / 8, (imageInfo.height + 7) / 8, 1);
+  dim3 blockSize(8, 8, 1);
+  dim3 gridSize((imageInfo.width + 7) / 8, (imageInfo.height + 7) / 8, 1);
 
-  renderInternal<<<blockSize, threadSize>>>(cImageInfo, spaceImageInfo, rayOrigin);
+  renderInternal<<<gridSize, blockSize>>>(cImageInfo, spaceImageInfo, rayOrigin);
 
   cudaDeviceSynchronize();
   cudaMemcpy(imageInfo.mColor, cImageInfo.mColor, imageSize, cudaMemcpyDeviceToHost);
@@ -107,19 +108,18 @@ void RayTracer::updateImage(ImageInfo& imageInfo, const SpaceImageInfo& spaceIma
   }
 
   cudaGraphicsMapResources(1, &mImpl->mPBOResource, nullptr);
-
   cudaGraphicsResourceGetMappedPointer(
     reinterpret_cast<void**>(&mImpl->mImageDeviceId), &mImpl->mResourceSize, mImpl->mPBOResource);
-
   int imageSize = imageInfo.width * imageInfo.height * sizeof(unsigned char) * 3;
 
   ImageInfo cImageInfo = imageInfo;
   cImageInfo.mColor = mImpl->mImageDeviceId;
-  dim3 threadSize(8, 8, 1);
-  dim3 blockSize((imageInfo.width + 7) / 8, (imageInfo.height + 7) / 8, 1);
+  dim3 blockSize(8, 8, 1);
+  dim3 gridSize((imageInfo.width + 7) / 8, (imageInfo.height + 7) / 8, 1);
 
-  renderInternal<<<blockSize, threadSize>>>(cImageInfo, spaceImageInfo, rayOrigin);
-
+  renderInternal<<<gridSize, blockSize>>>(cImageInfo, spaceImageInfo, rayOrigin);
+  auto error = cudaGetLastError();
+  std::cout << __LINE__ << cudaGetErrorName(error) << ": " << cudaGetErrorString(error) << std::endl;
   cudaDeviceSynchronize();
 
   cudaGraphicsUnmapResources(1, &mImpl->mPBOResource, nullptr);

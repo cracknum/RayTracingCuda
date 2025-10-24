@@ -94,7 +94,12 @@ void Image::setImage(unsigned int width, unsigned int height)
 {
   mImpl->mWidth = width;
   mImpl->mHeight = height;
+  mImpl->mImageInfo.width = width;
+  mImpl->mImageInfo.height = height;
+  mImpl->mImageInfo.mColor = nullptr;
+  
   mImpl->mImageNeedUpdate = true;
+
 }
 
 void Image::initialize(QOpenGLFunctions_4_4_Core* gl)
