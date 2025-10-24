@@ -26,8 +26,6 @@ class KERNEL_API RayTracer
 public:
   RayTracer();
   ~RayTracer();
-  void render(
-    ImageInfo& imageInfo, const SpaceImageInfo& spaceImageInfo, const glm::vec3& rayOrigin);
   void bindImagePBO(GLuint pbo);
   void unbindImagePBO(GLuint pbo);
   void updateImage(ImageInfo& imageInfo, const SpaceImageInfo& spaceImageInfo, const glm::vec3& rayOrigin);

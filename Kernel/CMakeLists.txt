@@ -11,10 +11,15 @@ set(header_files
     include/KernelExports.hpp
     include/Ray.cuh
     include/RayTracer.cuh
+    include/Hitable.cuh
+    include/Sphere.cuh
+    include/HitableList.cuh
 )
 set(source_files 
     src/ImageMaker.cu
     src/RayTracer.cu
+    src/Sphere.cu
+    src/HitableList.cu
 )
 
 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-diag-suppress=20012,20014")

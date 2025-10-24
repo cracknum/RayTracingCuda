@@ -5,6 +5,9 @@
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 #include <iostream>
+#include "Hitable.cuh"
+#include "Sphere.cuh"
+#include "HitableList.cuh"
 namespace Kernel
 {
 __device__ bool hitSphere(const glm::vec3& center, float radius, const Ray& r)
@@ -56,26 +59,12 @@ __global__ void renderInternal(
   imageInfo.mColor[pixelIndex + 2] = c.z * 255;
 }
 
-void RayTracer::render(
-  ImageInfo& imageInfo, const SpaceImageInfo& spaceImageInfo, const glm::vec3& rayOrigin)
+__global__ void createWorld(Hitable** dList, Hitable** dWorld)
 {
-  unsigned char* devId;
-  int imageSize = imageInfo.width * imageInfo.height * sizeof(unsigned char) * 3;
-  cudaMalloc(&devId, imageSize);
-  cudaMemset(devId, 0, imageSize);
-  cudaMemcpy(devId, imageInfo.mColor, imageSize, cudaMemcpyHostToDevice);
-
-  ImageInfo cImageInfo = imageInfo;
-  cImageInfo.mColor = devId;
-  dim3 blockSize(8, 8, 1);
-  dim3 gridSize((imageInfo.width + 7) / 8, (imageInfo.height + 7) / 8, 1);
-
-  renderInternal<<<gridSize, blockSize>>>(cImageInfo, spaceImageInfo, rayOrigin);
-
-  cudaDeviceSynchronize();
-  cudaMemcpy(imageInfo.mColor, cImageInfo.mColor, imageSize, cudaMemcpyDeviceToHost);
-
-  cudaFree(cImageInfo.mColor);
+  *dList = new Sphere(glm::vec3(0, 0, -1), 0.5);
+  *dList = new Sphere(glm::vec3(0, -100.5, -1), 100);
+  // TODO
+  *dWorld = new HitableList();
 }
 
 struct RayTracer::Impl
