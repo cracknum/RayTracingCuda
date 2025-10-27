@@ -45,7 +45,7 @@ struct Image::Impl final
     mImageInfo.height = height;
 
     mSpaceImageInfo.mLowerLeftCorner = glm::vec3(-2.0f, -1.0f, -1.0f);
-    mSpaceImageInfo.mHorizontal = glm::vec3(4.0f, 0.0f, 0.0f);
+    mSpaceImageInfo.mHorizontal = glm::vec3(2.0f, 0.0f, 0.0f);
     mSpaceImageInfo.mVertical = glm::vec3(0.0f, 2.0f, 0.0f);
 
     mRrayOrigin = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -97,6 +97,8 @@ void Image::setImage(unsigned int width, unsigned int height)
   mImpl->mImageInfo.width = width;
   mImpl->mImageInfo.height = height;
   mImpl->mImageInfo.mColor = nullptr;
+
+  mImpl->mSpaceImageInfo.mHorizontal.x = width * 1.0f / height * mImpl->mSpaceImageInfo.mVertical.y;
   
   mImpl->mImageNeedUpdate = true;
 
