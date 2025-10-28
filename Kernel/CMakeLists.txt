@@ -15,6 +15,8 @@ set(header_files
     include/Sphere.cuh
     include/HitableList.cuh
     include/Camera.cuh
+    include/Dispatcher.hpp
+    include/Observer.hpp
 )
 set(source_files 
     src/ImageMaker.cu
@@ -22,6 +24,7 @@ set(source_files
     src/Sphere.cu
     src/HitableList.cu
     src/Camera.cu
+    src/Dispatcher.cpp
 )
 
 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-diag-suppress=20012,20014")
