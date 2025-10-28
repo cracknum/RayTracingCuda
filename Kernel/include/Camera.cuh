@@ -1,9 +1,9 @@
 #ifndef CAMERA_CUDA_H
 #define CAMERA_CUDA_H
+#include "KernelExports.hpp"
 #include "Observer.hpp"
 #include <glm/detail/type_quat.hpp>
 #include <glm/glm.hpp>
-#include "KernelExports.hpp"
 
 class QInputEvent;
 
@@ -18,6 +18,9 @@ public:
   void onMouseRelease(const QInputEvent* event) override;
   void onMouseMove(const QInputEvent* event) override;
   void onWheelEvent(const QInputEvent* event) override;
+
+  void onKeyPressed(const QInputEvent* event) override;
+  void onKeyReleased(const QInputEvent* event) override;
 
 private:
   glm::vec3 mLookAt;

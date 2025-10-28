@@ -93,3 +93,11 @@ void RenderWindow::wheelEvent(QWheelEvent* event)
 {
   mImpl->mDispatcher->handle(event);
 }
+void RenderWindow::keyPressEvent(QKeyEvent* event)
+{
+  mImpl->mDispatcher->handle(event);
+}
+void RenderWindow::keyReleaseEvent(QKeyEvent* event)
+{
+  mImpl->mDispatcher->handle(event);
+}

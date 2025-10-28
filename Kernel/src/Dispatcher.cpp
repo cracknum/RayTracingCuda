@@ -40,6 +40,15 @@ void Dispatcher::handle(const QInputEvent* event, ObserverPtr& observer)
   {
     observer->onWheelEvent(event);
   }
+  else if (event->type() == QEvent::KeyPress)
+  {
+    observer->onKeyPressed(event);
+  }
+  else if (event->type() == QEvent::KeyRelease)
+  {
+    observer->onKeyReleased(event);
+  }
+
 }
 
 void Dispatcher::addObverser(const ObserverPtr& observer)

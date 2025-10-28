@@ -34,6 +34,15 @@ void Camera::onMouseMove(const QInputEvent* event) {
   std::cout << "mouse move" << std::endl;
 }
 
-void Camera::onWheelEvent(const QInputEvent* event) {
+void Camera::onWheelEvent(const QInputEvent* event)
+{
   std::cout << "wheel event" << std::endl;
+}
+void Camera::onKeyPressed(const QInputEvent* event)
+{
+  std::cout << "key pressed" << std::endl;
+}
+void Camera::onKeyReleased(const QInputEvent* event)
+{
+  std::cout << "key released" << std::endl;
 }
