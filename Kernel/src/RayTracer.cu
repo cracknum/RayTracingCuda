@@ -1,3 +1,4 @@
+#include "Camera.cuh"
 #include "Hitable.cuh"
 #include "HitableList.cuh"
 #include "Ray.cuh"
@@ -51,8 +52,8 @@ __global__ void destroyWorld(Hitable** dList, Hitable** dWorld)
   delete *dWorld;
 }
 
-__global__ void renderInternal(ImageInfo imageInfo, SpaceImageInfo spaceImageInfo,
-  glm::vec3 rayOrigin, Hitable** dWorld, int nsize, curandState* states)
+__global__ void renderInternal(Camera camera, ImageInfo imageInfo, glm::vec3 rayOrigin,
+  Hitable** dWorld, int nsize, curandState* states)
 {
   int xIndex = blockDim.x * blockIdx.x + threadIdx.x;
   int yIndex = blockDim.y * blockIdx.y + threadIdx.y;
@@ -69,14 +70,9 @@ __global__ void renderInternal(ImageInfo imageInfo, SpaceImageInfo spaceImageInf
 
   for (int i = 0; i < nsize; ++i)
   {
-    float x = static_cast<float>(xIndex + curand_uniform(&states[randIndex])) /
-      static_cast<float>(imageInfo.width);
-    float y = static_cast<float>(yIndex + curand_uniform(&states[randIndex])) /
-      static_cast<float>(imageInfo.height);
-
-    Ray ray(rayOrigin,
-      spaceImageInfo.mLowerLeftCorner + x * spaceImageInfo.mHorizontal +
-        y * spaceImageInfo.mVertical - rayOrigin);
+    float x = (xIndex + curand_uniform(&states[randIndex])) / imageInfo.width;
+    float y = (yIndex + curand_uniform(&states[randIndex])) / imageInfo.height;
+    Ray ray = camera.getRay(x, y);
     c += color(ray, dWorld);
   }
 
@@ -107,11 +103,15 @@ struct RayTracer::Impl
   cudaGraphicsResource* mPBOResource;
   unsigned char* mImageDeviceId;
   size_t mResourceSize;
+  std::unique_ptr<Camera> mCamera;
+
   Impl()
     : mPBOResource(nullptr)
     , mImageDeviceId(nullptr)
     , mResourceSize(0)
   {
+    mCamera = std::make_unique<Camera>(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f),
+      glm::vec3(1.0f, 0.0f, 0.0f), 90.0f, 1920.0 / 1080);
   }
 };
 
@@ -124,13 +124,15 @@ void RayTracer::unbindImagePBO(GLuint pbo)
 {
   cudaGraphicsUnregisterResource(mImpl->mPBOResource);
 }
-void RayTracer::updateImage(
-  ImageInfo& imageInfo, const SpaceImageInfo& spaceImageInfo, const glm::vec3& rayOrigin)
+void RayTracer::updateImage(const ImageInfo& imageInfo)
 {
   if (!mImpl->mPBOResource)
   {
     return;
   }
+
+  float aspect = imageInfo.width * 1.0f / imageInfo.height;
+  mImpl->mCamera->setAspect(aspect);
 
   cudaGraphicsMapResources(1, &mImpl->mPBOResource, nullptr);
   cudaGraphicsResourceGetMappedPointer(
@@ -157,7 +159,7 @@ void RayTracer::updateImage(
   int nSize = 1;
 
   renderInternal<<<gridSize, blockSize>>>(
-    cImageInfo, spaceImageInfo, rayOrigin, dWorld, nSize, d_rand_state);
+    *mImpl->mCamera, cImageInfo, mImpl->mCamera->getCameraOrigin(), dWorld, nSize, d_rand_state);
 
   cudaDeviceSynchronize();
 

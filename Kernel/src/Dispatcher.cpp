@@ -51,7 +51,7 @@ void Dispatcher::handle(const QInputEvent* event, ObserverPtr& observer)
 
 }
 
-void Dispatcher::addObverser(const ObserverPtr& observer)
+void Dispatcher::addObserver(const ObserverPtr& observer)
 {
   mImpl->mObversers.push_back(observer);
 }

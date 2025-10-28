@@ -16,11 +16,7 @@ struct Image::Impl final
   GLuint mImageTexture;
 
   Kernel::ImageInfo mImageInfo;
-  Kernel::SpaceImageInfo mSpaceImageInfo;
-
-  glm::vec3 mRrayOrigin;
-
-  Kernel::RayTracer mRayTracer;
+  Kernel::RayTracer* mRayTracer;
 
   bool mImageNeedUpdate;
 
@@ -37,18 +33,13 @@ struct Image::Impl final
     , mImageNeedUpdate(false)
     , mImageTexture(0)
     , mPBO(0)
+    , mRayTracer(nullptr)
   {
     mVertices = { -1.0f, -1.0f, 0.0f, 0.f, 0.f, -1.0f, 1.0f, 0.0f, 0.f, 1.f, 1.0f, 1.0f, 0.0f, 1.f,
       1.f, 1.0f, -1.0f, 0.0f, 1.f, 0.f };
     mElementIndices = { 0, 1, 3, 1, 2, 3 };
     mImageInfo.width = width;
     mImageInfo.height = height;
-
-    mSpaceImageInfo.mLowerLeftCorner = glm::vec3(-2.0f, -1.0f, -1.0f);
-    mSpaceImageInfo.mHorizontal = glm::vec3(2.0f, 0.0f, 0.0f);
-    mSpaceImageInfo.mVertical = glm::vec3(0.0f, 2.0f, 0.0f);
-
-    mRrayOrigin = glm::vec3(0.0f, 0.0f, 0.0f);
   }
 };
 
@@ -78,7 +69,7 @@ Image::~Image()
   }
   if (mImpl->mPBO)
   {
-    mImpl->mRayTracer.unbindImagePBO(mImpl->mPBO);
+    mImpl->mRayTracer->unbindImagePBO(mImpl->mPBO);
     mContext->glDeleteBuffers(1, &mImpl->mPBO);
   }
 }
@@ -98,10 +89,7 @@ void Image::setImage(unsigned int width, unsigned int height)
   mImpl->mImageInfo.height = height;
   mImpl->mImageInfo.mColor = nullptr;
 
-  mImpl->mSpaceImageInfo.mHorizontal.x = width * 1.0f / height * mImpl->mSpaceImageInfo.mVertical.y;
-  
   mImpl->mImageNeedUpdate = true;
-
 }
 
 void Image::initialize(QOpenGLFunctions_4_4_Core* gl)
@@ -170,7 +158,8 @@ void Image::initialize(QOpenGLFunctions_4_4_Core* gl)
 
   mContext->glGenTextures(1, &mImpl->mImageTexture);
   mContext->glBindTexture(GL_TEXTURE_2D, mImpl->mImageTexture);
-  mContext->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mImpl->mWidth, mImpl->mHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+  mContext->glTexImage2D(
+    GL_TEXTURE_2D, 0, GL_RGB, mImpl->mWidth, mImpl->mHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
   mContext->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
   mContext->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
   mContext->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -179,12 +168,17 @@ void Image::initialize(QOpenGLFunctions_4_4_Core* gl)
 
   mContext->glGenBuffers(1, &mImpl->mPBO);
   mContext->glBindBuffer(GL_PIXEL_UNPACK_BUFFER, mImpl->mPBO);
-  mContext->glBufferData(GL_PIXEL_UNPACK_BUFFER, mImpl->mWidth * mImpl->mHeight * 3, nullptr, GL_DYNAMIC_DRAW);
+  mContext->glBufferData(
+    GL_PIXEL_UNPACK_BUFFER, mImpl->mWidth * mImpl->mHeight * 3, nullptr, GL_DYNAMIC_DRAW);
   mContext->glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
-  mImpl->mRayTracer.bindImagePBO(mImpl->mPBO);
+  mImpl->mRayTracer->bindImagePBO(mImpl->mPBO);
 
   mInitialized = true;
+}
+void Image::setRayTracer(Kernel::RayTracer* rayTracer)
+{
+  mImpl->mRayTracer = rayTracer;
 }
 
 unsigned int Image::getImageTexture()
@@ -221,13 +215,9 @@ void Image::unbind()
   mContext->glUseProgram(0);
 }
 
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image_write.h"
-#include "stb_image.h"
 void Image::uploadImage()
 {
-  mImpl->mRayTracer.updateImage(mImpl->mImageInfo, mImpl->mSpaceImageInfo, mImpl->mRrayOrigin);
+  mImpl->mRayTracer->updateImage(mImpl->mImageInfo);
 
   mContext->glBindBuffer(GL_PIXEL_UNPACK_BUFFER, mImpl->mPBO);
   mContext->glBindTexture(GL_TEXTURE_2D, mImpl->mImageTexture);

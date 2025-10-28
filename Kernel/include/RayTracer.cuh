@@ -5,6 +5,8 @@
 #include <memory>
 #include <qopenglcontext.h>
 
+class SpaceImageInfo;
+
 namespace Kernel
 {
 struct KERNEL_API ImageInfo
@@ -14,13 +16,6 @@ struct KERNEL_API ImageInfo
   int height;
 };
 
-struct KERNEL_API SpaceImageInfo
-{
-  glm::vec3 mLowerLeftCorner;
-  glm::vec3 mHorizontal;
-  glm::vec3 mVertical;
-};
-
 class KERNEL_API RayTracer
 {
 public:
@@ -28,7 +23,7 @@ public:
   ~RayTracer();
   void bindImagePBO(GLuint pbo);
   void unbindImagePBO(GLuint pbo);
-  void updateImage(ImageInfo& imageInfo, const SpaceImageInfo& spaceImageInfo, const glm::vec3& rayOrigin);
+  void updateImage(const ImageInfo& imageInfo);
 
 private:
   struct Impl;

@@ -3,20 +3,18 @@
 #include <QColor>
 #include <QVector4D>
 #include "Dispatcher.hpp"
-#include "Camera.cuh"
+#include "RayTracer.cuh"
+
 struct RenderWindow::Impl final
 {
   QColor mClearColor;
   std::vector<std::unique_ptr<Element>> mElements;
   std::unique_ptr<Dispatcher> mDispatcher;
-  std::shared_ptr<Observer> mCamera;
-
+  Kernel::RayTracer mRayTracer;
   Impl()
     : mClearColor(16, 48, 72, 1)
   {
     mDispatcher = std::make_unique<Dispatcher>();
-    mCamera = std::shared_ptr<Observer>(new Camera(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f), 90, 0.9f));
-    mDispatcher->addObverser(mCamera);
   }
 };
 
@@ -29,6 +27,7 @@ RenderWindow::~RenderWindow() {}
 
 void RenderWindow::addElement(Element* elem)
 {
+  elem->setRayTracer(&mImpl->mRayTracer);
   mImpl->mElements.push_back(std::unique_ptr<Element>(elem));
 
   if (context())

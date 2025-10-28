@@ -5,30 +5,36 @@
 #include <cstdint>
 #include <memory>
 
+namespace Kernel
+{
+class RayTracer;
+}
 class QOpenGLFunctions_4_4_Core;
 
-class RENDER_API Image: public Element
+class RENDER_API Image : public Element
 {
 public:
-    using SuperClass = Element;
-    using Self = Image;
-    Image();
-    ~Image() override;
-    void render() override;
-    
-    void setImage(unsigned int width, unsigned int height);
-    void initialize(QOpenGLFunctions_4_4_Core* gl) override;
-    
-    unsigned int getImageTexture();
-    protected:
-    void drawOnImage();
-    void bind();
-    void unbind();
+  using SuperClass = Element;
+  using Self = Image;
+  Image();
+  ~Image() override;
+  void render() override;
 
-    void uploadImage();
+  void setImage(unsigned int width, unsigned int height);
+  void initialize(QOpenGLFunctions_4_4_Core* gl) override;
+  void setRayTracer(Kernel::RayTracer* rayTracer);
 
-   private:
-    struct Impl;
-    std::unique_ptr<Impl> mImpl;
+  unsigned int getImageTexture();
+
+protected:
+  void drawOnImage();
+  void bind();
+  void unbind();
+
+  void uploadImage();
+
+private:
+  struct Impl;
+  std::unique_ptr<Impl> mImpl;
 };
 #endif // IMAGE_OPENGL_H

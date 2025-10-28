@@ -13,7 +13,7 @@ public:
   Dispatcher();
   ~Dispatcher();
 
-  void addObverser(const ObserverPtr& observer);
+  void addObserver(const ObserverPtr& observer);
 
   void handle(const QInputEvent* event);
 
