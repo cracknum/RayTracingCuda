@@ -16,9 +16,9 @@ __host__ __device__ Camera::Camera(
  setAspect(aspect);
 
   mOrigin = lookFrom;
-  glm::vec3 w = glm::normalize(lookAt - lookFrom);
+  mForward = glm::normalize(lookAt - lookFrom);
   glm::vec3 u = glm::normalize(up);
-  mRight = glm::cross(w, u);
+  mRight = glm::cross(mForward, u);
 }
 
 void Camera::OnMousePressed(const QInputEvent* event)
@@ -38,7 +38,18 @@ void Camera::onMouseMove(const QInputEvent* event)
 
 void Camera::onWheelEvent(const QInputEvent* event)
 {
-  std::cout << "wheel event" << std::endl;
+  auto* wheelEvent = static_cast<const QWheelEvent*>(event);
+  QPoint angleDelta = wheelEvent->angleDelta();
+  if (angleDelta.y() > 0)
+  {
+    // forward
+    mOrigin += mSpeed * mForward;
+  }
+  else
+  {
+    // backward
+    mOrigin -= mSpeed * mForward;
+  }
 }
 void Camera::onKeyPressed(const QInputEvent* event)
 {

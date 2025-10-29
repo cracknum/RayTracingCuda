@@ -51,6 +51,7 @@ private:
   glm::vec3 mUp;
   glm::vec3 mOrigin;
   glm::vec3 mRight;
+  glm::vec3 mForward;
   float mSpeed;
 
   // 垂直视场角
