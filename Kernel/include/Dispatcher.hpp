@@ -3,8 +3,7 @@
 #include "KernelExports.hpp"
 #include <memory>
 #include <QInputEvent>
-
-class Observer;
+#include "Observer.hpp"
 
 class KERNEL_API Dispatcher
 {

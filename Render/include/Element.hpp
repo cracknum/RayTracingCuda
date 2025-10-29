@@ -22,7 +22,7 @@ public:
   {
   }
   virtual ~Element() = default;
-
+  virtual void update() = 0;
   virtual void render() = 0;
   bool initialized() const { return mInitialized; };
   virtual void initialize(QOpenGLFunctions_4_4_Core* gl) { mContext = gl; }

@@ -180,6 +180,10 @@ void Image::setRayTracer(Kernel::RayTracer* rayTracer)
 {
   mImpl->mRayTracer = rayTracer;
 }
+void Image::update()
+{
+  mImpl->mImageNeedUpdate = true;
+}
 
 unsigned int Image::getImageTexture()
 {

@@ -3,6 +3,8 @@
 #include "HitableList.cuh"
 #include "Ray.cuh"
 #include "RayTracer.cuh"
+
+#include "Dispatcher.hpp"
 #include "Sphere.cuh"
 #include <cuda.h>
 #include <cuda_gl_interop.h>
@@ -103,15 +105,15 @@ struct RayTracer::Impl
   cudaGraphicsResource* mPBOResource;
   unsigned char* mImageDeviceId;
   size_t mResourceSize;
-  std::unique_ptr<Camera> mCamera;
+  std::shared_ptr<Camera> mCamera;
 
   Impl()
     : mPBOResource(nullptr)
     , mImageDeviceId(nullptr)
     , mResourceSize(0)
   {
-    mCamera = std::make_unique<Camera>(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f),
-      glm::vec3(1.0f, 0.0f, 0.0f), 90.0f, 1920.0 / 1080);
+    mCamera = std::make_shared<Camera>(glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f),
+      glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 1920.0 / 1080);
   }
 };
 
@@ -167,6 +169,10 @@ void RayTracer::updateImage(const ImageInfo& imageInfo)
   cudaFree(dList);
   cudaFree(dWorld);
   cudaGraphicsUnmapResources(1, &mImpl->mPBOResource, nullptr);
+}
+Dispatcher::ObserverPtr RayTracer::getCamera() const
+{
+  return mImpl->mCamera;
 }
 
 RayTracer::RayTracer()

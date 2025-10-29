@@ -16,9 +16,9 @@ __host__ __device__ Camera::Camera(
  setAspect(aspect);
 
   mOrigin = lookFrom;
-  glm::vec3 w = glm::normalize(lookFrom - lookAt);
+  glm::vec3 w = glm::normalize(lookAt - lookFrom);
   glm::vec3 u = glm::normalize(up);
-  mRight = glm::cross(u, w);
+  mRight = glm::cross(w, u);
 }
 
 void Camera::OnMousePressed(const QInputEvent* event)
@@ -49,15 +49,15 @@ void Camera::onKeyPressed(const QInputEvent* event)
   }
   else if (keyEvent->key() == Qt::Key_D)
   {
-    moveToBottom();
+    moveToRight();
   }
   else if (keyEvent->key() == Qt::Key_A)
   {
     moveToLeft();
   }
-  else if (keyEvent->key() == Qt::Key_D)
+  else if (keyEvent->key() == Qt::Key_S)
   {
-    moveToRight();
+    moveToBottom();
   }
 }
 void Camera::onKeyReleased(const QInputEvent* event) {}
@@ -65,7 +65,7 @@ Ray Camera::getRay(const float x, const float y) const
 {
   Ray ray(mOrigin,
     mSpaceImageInfo.mLowerLeftCorner + x * mSpaceImageInfo.mHorizontal +
-      y * mSpaceImageInfo.mVertical - mOrigin);
+      y * mSpaceImageInfo.mVertical);
 
   return ray;
 }
@@ -74,11 +74,11 @@ void Camera::setAspect(const float aspect)
   mAspect = aspect;
 
   float theta = mVFOV * M_PI / 180;
-  float halfHeight = tan(theta / 2);
-  float halfWidth = aspect * halfHeight;
+  float height = tan(theta / 2) * 2.0f;
+  float width = aspect * height;
   mSpaceImageInfo.mLowerLeftCorner = glm::vec3(-2.0f, -1.0f, -1.0f);
-  mSpaceImageInfo.mHorizontal = glm::vec3(halfHeight * 2.0f, 0.0f, 0.0f);
-  mSpaceImageInfo.mVertical = glm::vec3(0.0f, halfWidth * 2.0f, 0.0f);
+  mSpaceImageInfo.mHorizontal = glm::vec3(width, 0.0f, 0.0f);
+  mSpaceImageInfo.mVertical = glm::vec3(0.0f, height, 0.0f);
 }
 SpaceImageInfo Camera::getSpaceImageInfo() const
 {
@@ -98,9 +98,9 @@ void Camera::moveToRight()
 }
 void Camera::moveToTop()
 {
-  mOrigin += mSpeed * mUp;
+  mOrigin -= mSpeed * mUp;
 }
 void Camera::moveToBottom()
 {
-  mOrigin -= mSpeed * mUp;
+  mOrigin += mSpeed * mUp;
 }

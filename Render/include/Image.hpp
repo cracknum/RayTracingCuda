@@ -23,6 +23,7 @@ public:
   void setImage(unsigned int width, unsigned int height);
   void initialize(QOpenGLFunctions_4_4_Core* gl) override;
   void setRayTracer(Kernel::RayTracer* rayTracer);
+  void update() override;
 
   unsigned int getImageTexture();
 

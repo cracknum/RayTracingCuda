@@ -1,11 +1,13 @@
 #ifndef RAYTRACER_CUDA_H
 #define RAYTRACER_CUDA_H
+#include "Dispatcher.hpp"
 #include "KernelExports.hpp"
 #include <glm/glm.hpp>
 #include <memory>
 #include <qopenglcontext.h>
 
-class SpaceImageInfo;
+struct SpaceImageInfo;
+class Camera;
 
 namespace Kernel
 {
@@ -24,6 +26,8 @@ public:
   void bindImagePBO(GLuint pbo);
   void unbindImagePBO(GLuint pbo);
   void updateImage(const ImageInfo& imageInfo);
+
+  Dispatcher::ObserverPtr getCamera() const;
 
 private:
   struct Impl;

@@ -15,6 +15,7 @@ struct RenderWindow::Impl final
     : mClearColor(16, 48, 72, 1)
   {
     mDispatcher = std::make_unique<Dispatcher>();
+    mDispatcher->addObserver(mRayTracer.getCamera());
   }
 };
 
@@ -73,30 +74,47 @@ void RenderWindow::initializeElements()
   }
 }
 
+void RenderWindow::updateElements()
+{
+  for (auto& elem : mImpl->mElements)
+  {
+    if (elem->initialized())
+    {
+      elem->update();
+    }
+  }
+  update();
+}
 void RenderWindow::mousePressEvent(QMouseEvent* event)
 {
   mImpl->mDispatcher->handle(event);
+  updateElements();
 }
 
 void RenderWindow::mouseReleaseEvent(QMouseEvent* event)
 {
   mImpl->mDispatcher->handle(event);
+  updateElements();
 }
 
 void RenderWindow::mouseMoveEvent(QMouseEvent* event)
 {
   mImpl->mDispatcher->handle(event);
+  updateElements();
 }
 
 void RenderWindow::wheelEvent(QWheelEvent* event)
 {
   mImpl->mDispatcher->handle(event);
+  updateElements();
 }
 void RenderWindow::keyPressEvent(QKeyEvent* event)
 {
   mImpl->mDispatcher->handle(event);
+  updateElements();
 }
 void RenderWindow::keyReleaseEvent(QKeyEvent* event)
 {
   mImpl->mDispatcher->handle(event);
+  updateElements();
 }
