@@ -13,9 +13,9 @@ namespace Kernel
 {
 struct KERNEL_API ImageInfo
 {
-  unsigned char* mColor;
-  int width;
-  int height;
+  unsigned char* mColor = nullptr;
+  int width = -1;
+  int height = -1;
 };
 
 class KERNEL_API RayTracer

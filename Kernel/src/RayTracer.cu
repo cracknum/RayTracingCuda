@@ -106,14 +106,29 @@ struct RayTracer::Impl
   unsigned char* mImageDeviceId;
   size_t mResourceSize;
   std::shared_ptr<Camera> mCamera;
+  Hitable** dList;
+  Hitable** dWorld;
+  curandState* d_rand_state;
+  ImageInfo mImageInfo;
 
   Impl()
     : mPBOResource(nullptr)
     , mImageDeviceId(nullptr)
     , mResourceSize(0)
+    , d_rand_state(nullptr)
   {
     mCamera = std::make_shared<Camera>(glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f),
       glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 1920.0 / 1080);
+
+    cudaMalloc(&dList, sizeof(Hitable*) * 2);
+    cudaMalloc(&dWorld, sizeof(Hitable*));
+    createWorld<<<1, 1>>>(dList, dWorld);
+  }
+  ~Impl()
+  {
+    destroyWorld<<<1, 1>>>(dList, dWorld);
+    cudaFree(dList);
+    cudaFree(dWorld);
   }
 };
 
@@ -133,41 +148,29 @@ void RayTracer::updateImage(const ImageInfo& imageInfo)
     return;
   }
 
-  float aspect = imageInfo.width * 1.0f / imageInfo.height;
-  mImpl->mCamera->setAspect(aspect);
-
   cudaGraphicsMapResources(1, &mImpl->mPBOResource, nullptr);
   cudaGraphicsResourceGetMappedPointer(
     reinterpret_cast<void**>(&mImpl->mImageDeviceId), &mImpl->mResourceSize, mImpl->mPBOResource);
-
-  Hitable** dList;
-  cudaMalloc(&dList, sizeof(Hitable*) * 2);
-  Hitable** dWorld;
-  cudaMalloc(&dWorld, sizeof(Hitable*));
-
-  createWorld<<<1, 1>>>(dList, dWorld);
-
-  curandState* d_rand_state;
-  cudaMalloc(&d_rand_state, sizeof(curandState) * imageInfo.width * imageInfo.height);
 
   ImageInfo cImageInfo = imageInfo;
   cImageInfo.mColor = mImpl->mImageDeviceId;
   dim3 blockSize(8, 8, 1);
   dim3 gridSize((imageInfo.width + 7) / 8, (imageInfo.height + 7) / 8, 1);
-
-  initRandom<<<gridSize, blockSize>>>(imageInfo.width, imageInfo.height, d_rand_state);
-
+  if (imageInfo.width != mImpl->mImageInfo.width || imageInfo.height != mImpl->mImageInfo.height)
+  {
+    float aspect = imageInfo.width * 1.0f / imageInfo.height;
+    mImpl->mCamera->setAspect(aspect);
+    cudaMalloc(&mImpl->d_rand_state, sizeof(curandState) * imageInfo.width * imageInfo.height);
+    initRandom<<<gridSize, blockSize>>>(imageInfo.width, imageInfo.height, mImpl->d_rand_state);
+    mImpl->mImageInfo = imageInfo;
+  }
   // 抗锯齿参数
   int nSize = 1;
 
-  renderInternal<<<gridSize, blockSize>>>(
-    *mImpl->mCamera, cImageInfo, mImpl->mCamera->getCameraOrigin(), dWorld, nSize, d_rand_state);
+  renderInternal<<<gridSize, blockSize>>>(*mImpl->mCamera, cImageInfo,
+    mImpl->mCamera->getCameraOrigin(), mImpl->dWorld, nSize, mImpl->d_rand_state);
 
   cudaDeviceSynchronize();
-
-  destroyWorld<<<1, 1>>>(dList, dWorld);
-  cudaFree(dList);
-  cudaFree(dWorld);
   cudaGraphicsUnmapResources(1, &mImpl->mPBOResource, nullptr);
 }
 Dispatcher::ObserverPtr RayTracer::getCamera() const
