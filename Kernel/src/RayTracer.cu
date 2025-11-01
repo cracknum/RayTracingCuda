@@ -42,15 +42,17 @@ __device__ glm::vec3 color(const Ray& r, Hitable** dWorld)
 
 __global__ void createWorld(Hitable** dList, Hitable** dWorld)
 {
-  *dList = new Sphere(glm::vec3(0, 0, -1), 0.5);
-  *(dList + 1) = new Sphere(glm::vec3(0, -100.5, -1), 100);
-  *dWorld = new HitableList(dList, 2);
+  *dList = new Sphere(glm::vec3(-0.5f, 0, 0), 0.5);
+  *(dList + 1) = new Sphere(glm::vec3(0.5f, 0, 0), 0.5);
+  *(dList + 2) = new Sphere(glm::vec3(0, -100.5, -1), 100);
+  *dWorld = new HitableList(dList, 3);
 }
 
 __global__ void destroyWorld(Hitable** dList, Hitable** dWorld)
 {
   delete *dList;
   delete *(dList + 1);
+  delete *(dList + 2);
   delete *dWorld;
 }
 
@@ -117,10 +119,9 @@ struct RayTracer::Impl
     , mResourceSize(0)
     , d_rand_state(nullptr)
   {
-    mCamera = std::make_shared<Camera>(glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 0.0f, 0.0f),
-      glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, 1920.0 / 1080);
+    mCamera = std::make_shared<Camera>(glm::vec3(0.0f, 0.0f, 0.7f), 45.0f, 1920.0 / 1080);
 
-    cudaMalloc(&dList, sizeof(Hitable*) * 2);
+    cudaMalloc(&dList, sizeof(Hitable*) * 3);
     cudaMalloc(&dWorld, sizeof(Hitable*));
     createWorld<<<1, 1>>>(dList, dWorld);
   }
