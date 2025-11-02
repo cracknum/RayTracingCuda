@@ -6,25 +6,32 @@ set(CMAKE_CUDA_ARCHITECTURES 89)
 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-diag-suppress=20012,1394")
 
 set(header_files
-    include/Macro.h
-    include/ImageMaker.h
-    include/KernelExports.hpp
-    include/Ray.cuh
-    include/RayTracer.cuh
-    include/Hitable.cuh
-    include/Sphere.cuh
-    include/HitableList.cuh
-    include/Camera.cuh
-    include/Dispatcher.hpp
-    include/Observer.hpp
+        include/Macro.h
+        include/ImageMaker.h
+        include/KernelExports.hpp
+        include/Ray.cuh
+        include/RayTracer.cuh
+        include/Hitable.cuh
+        include/Sphere.cuh
+        include/HitableList.cuh
+        include/Camera.cuh
+        include/Dispatcher.hpp
+        include/Observer.hpp
+        include/Material.cuh
+        include/Lambertian.cuh
+        include/Metal.cuh
+        include/FuzzyMetalReflection.cuh
 )
-set(source_files 
-    src/ImageMaker.cu
-    src/RayTracer.cu
-    src/Sphere.cu
-    src/HitableList.cu
-    src/Camera.cu
-    src/Dispatcher.cpp
+set(source_files
+        src/ImageMaker.cu
+        src/RayTracer.cu
+        src/Sphere.cu
+        src/HitableList.cu
+        src/Camera.cu
+        src/Dispatcher.cpp
+        include/Lambertian.cu
+        include/Metal.cu
+        include/FuzzyMetalReflection.cu
 )
 
 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-diag-suppress=20012,20014")
