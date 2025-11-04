@@ -26,7 +26,8 @@ __device__ Material::Color color(curandState* state, const Ray& r, Hitable** dWo
  
   for (int i = 0; i < 50; ++i)
   {
-    if ((*dWorld)->hit(currentRay, 0, FLT_MAX, record))
+    // 将最小值设置为0.001避免击中点进入到surface内部
+    if ((*dWorld)->hit(currentRay, 0.001, FLT_MAX, record))
     {
       Material::Color albedo;
       Ray scatteredRay;
@@ -49,14 +50,14 @@ __device__ Material::Color color(curandState* state, const Ray& r, Hitable** dWo
     }
   }
 
-  return Material::Color(0.0f, 0.0f, 0.0f);
+  return color;
   
 }
 
 __global__ void createWorld(Hitable** dList, Hitable** dWorld)
 {
   *dList = new Sphere(glm::vec3(-0.5f, 0, 0), 0.5, new Metal(Material::Color(1.0f, 0.0f, 0.0f)));
-  *(dList + 1) = new Sphere(glm::vec3(0.5f, 0, 0), 0.5, new FuzzyMetalReflection(Material::Color(0.0f, 1.0f, 0.0f), 0.4));
+  *(dList + 1) = new Sphere(glm::vec3(0.5f, 0, 0), 0.5, new Metal(Material::Color(0.0f, 1.0f, 0.0f)));
   *(dList + 2) = new Sphere(glm::vec3(0, -100.5, -1), 100, new Metal(Material::Color(0.0f, 0.0f, 1.0f)));
   *dWorld = new HitableList(dList, 3);
 }
