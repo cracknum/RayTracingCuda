@@ -12,39 +12,52 @@
 #include <curand_kernel.h>
 #include <device_launch_parameters.h>
 #include <iostream>
+#include "Material.cuh"
+#include "Metal.cuh"
+#include "Lambertian.cuh"
+#include "FuzzyMetalReflection.cuh"
 namespace Kernel
 {
-__device__ bool hitSphere(const glm::vec3& center, float radius, const Ray& r)
+__device__ Material::Color color(curandState* state, const Ray& r, Hitable** dWorld)
 {
-  glm::vec3 oc = r.origin() - center;
-  float a = dot(r.direction(), r.direction());
-  float b = 2.0f * dot(oc, r.direction());
-  float c = dot(oc, oc) - radius * radius;
-  float discriminant = b * b - 4.0f * a * c;
-  return (discriminant > 0.0f);
-}
-
-__device__ glm::vec3 color(const Ray& r, Hitable** dWorld)
-{
+  Ray currentRay = r;
   HitRecord record;
-  if ((*dWorld)->hit(r, 0, FLT_MAX, record))
+  Material::Color color(1.0f);
+ 
+  for (int i = 0; i < 50; ++i)
   {
-    return 0.5f * glm::vec3(record.normal.x + 1.0f, record.normal.y + 1.0f, record.normal.z + 1.0f);
+    if ((*dWorld)->hit(currentRay, 0, FLT_MAX, record))
+    {
+      Material::Color albedo;
+      Ray scatteredRay;
+      if (record.material->scatter(state, currentRay, record, albedo, scatteredRay))
+      {
+        color *= albedo;
+        currentRay = scatteredRay;
+      }
+      else
+      {
+        return Material::Color(0.0f, 0.0f, 0.0f);
+      }
+    }
+    else
+    {
+      glm::vec3 uDirection = glm::normalize(currentRay.direction());
+      float t = 0.5f * (uDirection.y + 1.0f);
+      Material::Color background = ((1 - t) * glm::vec3(1.0f, 1.0f, 1.0f) + t * glm::vec3(0.5f, 0.7f, 1.0f));
+      return color * background;
+    }
   }
-  else
-  {
-    glm::vec3 uDirection = glm::normalize(r.direction());
-    float t = 0.5f * (uDirection.y + 1.0f);
 
-    return (1 - t) * glm::vec3(1.0f, 1.0f, 1.0f) + t * glm::vec3(0.5f, 0.7f, 1.0f);
-  }
+  return Material::Color(0.0f, 0.0f, 0.0f);
+  
 }
 
 __global__ void createWorld(Hitable** dList, Hitable** dWorld)
 {
-  *dList = new Sphere(glm::vec3(-0.5f, 0, 0), 0.5);
-  *(dList + 1) = new Sphere(glm::vec3(0.5f, 0, 0), 0.5);
-  *(dList + 2) = new Sphere(glm::vec3(0, -100.5, -1), 100);
+  *dList = new Sphere(glm::vec3(-0.5f, 0, 0), 0.5, new Metal(Material::Color(1.0f, 0.0f, 0.0f)));
+  *(dList + 1) = new Sphere(glm::vec3(0.5f, 0, 0), 0.5, new FuzzyMetalReflection(Material::Color(0.0f, 1.0f, 0.0f), 0.4));
+  *(dList + 2) = new Sphere(glm::vec3(0, -100.5, -1), 100, new Metal(Material::Color(0.0f, 0.0f, 1.0f)));
   *dWorld = new HitableList(dList, 3);
 }
 
@@ -77,7 +90,7 @@ __global__ void renderInternal(Camera camera, ImageInfo imageInfo, glm::vec3 ray
     float x = (xIndex + curand_uniform(&states[randIndex])) / imageInfo.width;
     float y = (yIndex + curand_uniform(&states[randIndex])) / imageInfo.height;
     Ray ray = camera.getRay(x, y);
-    c += color(ray, dWorld);
+    c += color(&states[randIndex], ray, dWorld);
   }
 
   c /= static_cast<float>(nsize);

@@ -1,8 +1,16 @@
 #include "Sphere.cuh"
 __device__ Sphere::Sphere() {}
-__device__ Sphere::Sphere(const glm::vec3& center, float radius)
+Sphere::~Sphere() {
+  if (mMaterial)
+  {
+    delete mMaterial;
+  }
+  
+}
+__device__ Sphere::Sphere(const glm::vec3& center, float radius, Material* material)
   : mCenter(center)
   , mRadius(radius)
+  , mMaterial(material)
 {
 }
 
@@ -21,6 +29,7 @@ __device__ bool Sphere::hit(const Ray& r, float tMin, float tMax, HitRecord& rec
       record.t = temp;
       record.point = r.pointAtParameter(record.t);
       record.normal = (record.point - mCenter) / mRadius;
+      record.material = mMaterial;
       return true;
     }
     temp = (-b + sqrt(discriminant)) / a;
@@ -29,6 +38,7 @@ __device__ bool Sphere::hit(const Ray& r, float tMin, float tMax, HitRecord& rec
       record.t = temp;
       record.point = r.pointAtParameter(record.t);
       record.normal = (record.point - mCenter) / mRadius;
+      record.material = mMaterial;
       return true;
     }
   }

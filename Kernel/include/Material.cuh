@@ -1,6 +1,6 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
-#include <crt/host_defines.h>
+#include <cuda_runtime.h>
 #include <curand_kernel.h>
 #include <glm/ext/quaternion_geometric.hpp>
 #include <glm/glm.hpp>
@@ -54,7 +54,6 @@ public:
 
     return -onUnitSphere;
   }
-protected:
   Color mAlbedo = {0.0f, 0.0f, 0.0f};
 };
 

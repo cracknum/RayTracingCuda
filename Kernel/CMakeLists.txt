@@ -29,9 +29,9 @@ set(source_files
         src/HitableList.cu
         src/Camera.cu
         src/Dispatcher.cpp
-        include/Lambertian.cu
-        include/Metal.cu
-        include/FuzzyMetalReflection.cu
+        src/Lambertian.cu
+        src/Metal.cu
+        src/FuzzyMetalReflection.cu
 )
 
 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-diag-suppress=20012,20014")

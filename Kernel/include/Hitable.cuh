@@ -3,11 +3,14 @@
 #include "Ray.cuh"
 #include <glm/glm.hpp>
 
+class Material;
+
 struct HitRecord
 {
     float t;
     glm::vec3 point;
     glm::vec3 normal;     
+    Material* material;
 };
 
 class Hitable
