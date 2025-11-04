@@ -1,4 +1,6 @@
 #include "Sphere.cuh"
+
+#include "Material.cuh"
 __device__ Sphere::Sphere() {}
 Sphere::~Sphere() {
   if (mMaterial)

@@ -50,15 +50,18 @@ __device__ Material::Color color(curandState* state, const Ray& r, Hitable** dWo
     }
   }
 
-  return color;
+  return Material::Color(0.0f, 0.0f, 0.0f);
   
 }
 
 __global__ void createWorld(Hitable** dList, Hitable** dWorld)
 {
-  *dList = new Sphere(glm::vec3(-0.5f, 0, 0), 0.5, new Metal(Material::Color(1.0f, 0.0f, 0.0f)));
-  *(dList + 1) = new Sphere(glm::vec3(0.5f, 0, 0), 0.5, new Metal(Material::Color(0.0f, 1.0f, 0.0f)));
-  *(dList + 2) = new Sphere(glm::vec3(0, -100.5, -1), 100, new Metal(Material::Color(0.0f, 0.0f, 1.0f)));
+  dList[0] = new Sphere(glm::vec3(0,0,-1), 0.5,
+                               new FuzzyMetalReflection(glm::vec3(0.8, 0.3, 0.3), .1));
+  dList[1] = new Sphere(glm::vec3(0,-100.5,-1), 100,
+                         new Metal(glm::vec3(0.8, 0.8, 0.0)));
+  dList[2] = new Sphere(glm::vec3(1,0,-1), 0.5,
+                         new Lambertian(glm::vec3(0.8, 0.6, 0.2)));
   *dWorld = new HitableList(dList, 3);
 }
 
@@ -180,7 +183,7 @@ void RayTracer::updateImage(const ImageInfo& imageInfo)
     mImpl->mImageInfo = imageInfo;
   }
   // 抗锯齿参数
-  int nSize = 1;
+  int nSize = 64;
 
   renderInternal<<<gridSize, blockSize>>>(*mImpl->mCamera, cImageInfo,
     mImpl->mCamera->getCameraOrigin(), mImpl->dWorld, nSize, mImpl->d_rand_state);
