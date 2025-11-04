@@ -11,6 +11,14 @@ struct HitRecord
     glm::vec3 point;
     glm::vec3 normal;     
     Material* material;
+  // 是否是surface外侧
+    bool front_face;
+
+  __device__  __forceinline__ void   setFaceNormal(const Ray& r, const glm::vec3& outwardNormal)
+  {
+    front_face = (glm::dot(r.direction(), outwardNormal) < 0);
+    normal = front_face ? outwardNormal : -outwardNormal;
+  }
 };
 
 class Hitable
@@ -19,6 +27,7 @@ class Hitable
         __device__ Hitable() {};
         __device__ virtual ~Hitable() {};
         __device__ virtual bool hit(const Ray& r, float tMin, float tMax, HitRecord& record) const = 0;
+
 };
 
 #endif // HITABLE_CUDA_H

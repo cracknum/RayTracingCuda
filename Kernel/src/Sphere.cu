@@ -30,8 +30,9 @@ __device__ bool Sphere::hit(const Ray& r, float tMin, float tMax, HitRecord& rec
     {
       record.t = temp;
       record.point = r.pointAtParameter(record.t);
-      record.normal = (record.point - mCenter) / mRadius;
       record.material = mMaterial;
+      glm::vec3 outwardNormal = (record.point - mCenter) / mRadius;
+      record.setFaceNormal(r, outwardNormal);
       return true;
     }
     temp = (-b + sqrt(discriminant)) / a;
@@ -39,7 +40,8 @@ __device__ bool Sphere::hit(const Ray& r, float tMin, float tMax, HitRecord& rec
     {
       record.t = temp;
       record.point = r.pointAtParameter(record.t);
-      record.normal = (record.point - mCenter) / mRadius;
+      glm::vec3 outwardNormal = (record.point - mCenter) / mRadius;
+      record.setFaceNormal(r, outwardNormal);
       record.material = mMaterial;
       return true;
     }

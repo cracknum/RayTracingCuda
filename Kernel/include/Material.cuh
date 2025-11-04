@@ -27,6 +27,37 @@ public:
     return in - 2 * glm::dot(in, normal) * normal;
   }
 
+  /**
+   *@brief 材质的折射率计算
+   *@param uv 光线的入射方向
+   *@param n 击中后的位置的法向量
+   *@param etai_over_etat 材质的折射率
+   */
+  __device__ __forceinline__
+  glm::vec3 refract(const glm::vec3& uv, const glm::vec3& n, float etai_over_etat)
+  {
+    // 来源于snell折射公式的推导
+    auto cos_theta = fminf(glm::dot(-uv, n), 1.0f);
+    glm::vec3 r_out_perp = etai_over_etat * (uv + cos_theta * n);
+    glm::vec3 r_out_parallel = -sqrtf(fabsf(1.0f - r_out_perp.length())) * n;
+
+    return r_out_perp + r_out_parallel;
+  }
+
+  /**
+   *@brief 对于snell's low的近似计算（Schlick Approximation）
+   *@param cosine 入射角的余弦值
+   *@param refractIndex 反射率
+   *@return 反射率
+   */
+  __device__ __forceinline__ float reflectance(float cosine, float refractIndex)
+  {
+    auto r0 = (1 - refractIndex) / (1 + refractIndex);
+    r0 = r0 * r0;
+
+    return r0 + (1 - r0) * powf((1 - cosine), 5.0f);
+  }
+
   __device__
   glm::vec3 randomUnitVector(curandState* state)
   {

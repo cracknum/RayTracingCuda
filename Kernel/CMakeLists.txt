@@ -21,6 +21,7 @@ set(header_files
         include/Lambertian.cuh
         include/Metal.cuh
         include/FuzzyMetalReflection.cuh
+        include/Dielectric.cuh
 )
 set(source_files
         src/ImageMaker.cu
@@ -32,6 +33,7 @@ set(source_files
         src/Lambertian.cu
         src/Metal.cu
         src/FuzzyMetalReflection.cu
+        src/Dielectric.cu
 )
 
 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-diag-suppress=20012,20014")

@@ -16,6 +16,9 @@
 #include "Metal.cuh"
 #include "Lambertian.cuh"
 #include "FuzzyMetalReflection.cuh"
+#include "Dielectric.cuh"
+
+#define HITABLE_SIZE 5
 namespace Kernel
 {
 __device__ Material::Color color(curandState* state, const Ray& r, Hitable** dWorld)
@@ -62,14 +65,19 @@ __global__ void createWorld(Hitable** dList, Hitable** dWorld)
                          new Metal(glm::vec3(0.8, 0.8, 0.0)));
   dList[2] = new Sphere(glm::vec3(1,0,-1), 0.5,
                          new Lambertian(glm::vec3(0.8, 0.6, 0.2)));
-  *dWorld = new HitableList(dList, 3);
+  dList[3] = new Sphere(glm::vec3(-1,0,-1), 0.5,
+                       new Dielectric(1.5f));
+  dList[4] = new Sphere(glm::vec3(-1,0,-1), 0.4,
+                         new Dielectric(1.0f/1.5f));
+  *dWorld = new HitableList(dList, HITABLE_SIZE);
 }
 
 __global__ void destroyWorld(Hitable** dList, Hitable** dWorld)
 {
-  delete *dList;
-  delete *(dList + 1);
-  delete *(dList + 2);
+  for (int i = 0; i < HITABLE_SIZE; ++i)
+  {
+    delete *(dList + i);
+  }
   delete *dWorld;
 }
 
@@ -138,7 +146,7 @@ struct RayTracer::Impl
   {
     mCamera = std::make_shared<Camera>(glm::vec3(0.0f, 0.0f, 0.7f), 45.0f, 1920.0 / 1080);
 
-    cudaMalloc(&dList, sizeof(Hitable*) * 3);
+    cudaMalloc(&dList, sizeof(Hitable*) * HITABLE_SIZE);
     cudaMalloc(&dWorld, sizeof(Hitable*));
     createWorld<<<1, 1>>>(dList, dWorld);
   }
