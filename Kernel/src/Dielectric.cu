@@ -15,15 +15,15 @@ bool Dielectric::scatter(
 
   glm::vec3 unitDirection = glm::normalize(ray.direction());
 
-  double cos_theta = fminf(glm::dot(-unitDirection, record.normal), 1.0f);
-  double sin_theta = sqrtf(1.0f - cos_theta * cos_theta);
+  float cos_theta = fminf(glm::dot(-unitDirection, record.normal), 1.0f);
+  float sin_theta = sqrtf(1.0f - cos_theta * cos_theta);
   // 从高折射率到低折射率发出光线时是无法进行折射的会全反射
   bool cannot_refract = ri * sin_theta > 1.0f;
   glm::vec3 direction;
 
   if (cannot_refract || reflectance(cos_theta, ri) > curand_uniform(randState))
   {
-    direction = reflect(ray.direction(), record.normal);
+    direction = reflect(unitDirection, record.normal);
   }
   else
   {

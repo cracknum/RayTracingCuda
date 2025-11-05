@@ -39,7 +39,13 @@ public:
     // 来源于snell折射公式的推导
     auto cos_theta = fminf(glm::dot(-uv, n), 1.0f);
     glm::vec3 r_out_perp = etai_over_etat * (uv + cos_theta * n);
-    glm::vec3 r_out_parallel = -sqrtf(fabsf(1.0f - r_out_perp.length())) * n;
+    float perp_len_sq = glm::dot(r_out_perp, r_out_perp);
+    if (perp_len_sq > 1.0f)
+    {
+      return reflect(uv, n);
+    }
+    
+    glm::vec3 r_out_parallel = -sqrtf(1.0f - perp_len_sq) * n;
 
     return r_out_perp + r_out_parallel;
   }
