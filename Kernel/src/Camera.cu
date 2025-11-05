@@ -4,11 +4,11 @@
 #include <iostream>
 #include <math.h>
 #include <qevent.h>
+#include <iostream>
 
-__host__ __device__ Camera::Camera(const glm::vec3& origin, float vfov, float aspect)
+__host__ __device__ Camera::Camera(const glm::vec3& origin, const glm::vec3& viewPoint, float vfov, float aspect)
   : mOrigin(origin)
   , mUp(0.0f, 1.0f, 0.0f)
-  , mForward(glm::vec3(0.0f, 0.0f, -1.0f))
   , mOrientation(1.0f, 0.0f, 0.0f, 0.0f)
   , mSpeed(0.01f)
   , mYaw(0.0f)
@@ -18,13 +18,11 @@ __host__ __device__ Camera::Camera(const glm::vec3& origin, float vfov, float as
   , mAspect(aspect)
   , mLeftButtonPressed(false)
   , mFocalLength(1.0f)
-  , mRotateCenter(0.0f)
+  , mRotateCenter(viewPoint)
 {
   mRotateLength = glm::length(mOrigin - mRotateCenter);
+  mForward = glm::normalize(viewPoint - origin);
   setAspect(aspect);
-
-  updateOrientation();
-  updateCameraDirection();
 }
 
 void Camera::OnMousePressed(const QInputEvent* event)
@@ -155,16 +153,14 @@ void Camera::updateOrientation()
 }
 void Camera::updateCameraDirection()
 {
-  mForward = mOrientation * glm::vec3(0.0f, 0.0f, -1.0f);
-  mUp = mOrientation * glm::vec3(0.0f, 1.0f, 0.0f);
-  mRight = mOrientation * glm::vec3(1.0f, 0.0f, 0.0f);
-  mOrigin = mRotateCenter - mRotateLength * mForward;
+  glm::vec3 forward = mOrientation * mForward;
+  mOrigin = mRotateCenter - mRotateLength * forward;
 }
 void Camera::updateSpaceImageInformation()
 {
-  glm::vec3 forward = mOrientation * glm::vec3(0, 0, -1);
-  glm::vec3 up = mOrientation * glm::vec3(0, 1, 0);
-  glm::vec3 right = mOrientation * glm::vec3(1, 0, 0);
+  glm::vec3 forward = mOrientation * mForward;
+  glm::vec3 up = mOrientation * mUp;
+  glm::vec3 right = mOrientation * glm::cross(mForward, mUp);
 
   glm::vec3 centerPoint = mOrigin + forward * mFocalLength;
   mSpaceImageInfo.mLowerLeftCorner =

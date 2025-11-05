@@ -23,7 +23,7 @@ class KERNEL_API Camera : public Observer
 public:
   __host__ __device__ Camera() = default;
   // 引入平移，旋转（四元数）
-  __host__ __device__ Camera(const glm::vec3& origin, float vfov, float aspect);
+  __host__ __device__ Camera(const glm::vec3& origin, const glm::vec3& viewPoint, float vfov, float aspect);
   __device__ Ray getRay(const float x, const float y) const;
 
   void setAspect(const float aspect);
