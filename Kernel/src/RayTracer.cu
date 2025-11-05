@@ -101,7 +101,7 @@ __global__ void renderInternal(Camera camera, ImageInfo imageInfo, glm::vec3 ray
   {
     float x = (xIndex + curand_uniform(&states[randIndex])) / imageInfo.width;
     float y = (yIndex + curand_uniform(&states[randIndex])) / imageInfo.height;
-    Ray ray = camera.getRay(x, y);
+    Ray ray = camera.getRay(x, y, &states[randIndex]);
     c += color(&states[randIndex], ray, dWorld);
   }
 

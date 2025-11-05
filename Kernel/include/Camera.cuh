@@ -26,7 +26,7 @@ public:
   __host__ __device__ Camera() = default;
   // 引入平移，旋转（四元数）
   __host__ __device__ Camera(const glm::vec3& origin, const glm::vec3& viewPoint, float vfov, float aspect);
-  __device__ Ray getRay(const float x, const float y) const;
+  __device__ Ray getRay(const float x, const float y, curandState* state) const;
 
   __device__ glm::vec3 randomInUnitDisk(curandState* state) const;
 
@@ -52,6 +52,12 @@ protected:
   void updateOrientation();
   void updateCameraDirection();
   void updateSpaceImageInformation();
+
+  /**
+   *@param 从透镜上随机取点
+   *
+   */
+  __device__ glm::vec3 lensDiskSample(const glm::vec3& center, curandState* state) const;
 
 private:
   glm::vec3 mOrigin;
@@ -83,5 +89,13 @@ private:
   // 焦距
   float mFocalLength;
   float mRotateLength;
+
+  // 透镜(lens)坐标系
+  glm::vec3 mLensXVector;
+  glm::vec3 mLensYVector;
+  // 视锥顶部的角度
+  float mDefocusAngle;
+  // 透镜(lens)到成像平面的距离
+  float mFocusDistance;
 };
 #endif

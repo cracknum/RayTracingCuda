@@ -4,10 +4,9 @@
 #include <iostream>
 #include <math.h>
 #include <qevent.h>
-#include <iostream>
 
-
-__host__ __device__ Camera::Camera(const glm::vec3& origin, const glm::vec3& viewPoint, float vfov, float aspect)
+__host__ __device__ Camera::Camera(
+  const glm::vec3& origin, const glm::vec3& viewPoint, float vfov, float aspect)
   : mOrigin(origin)
   , mUp(0.0f, 1.0f, 0.0f)
   , mOrientation(1.0f, 0.0f, 0.0f, 0.0f)
@@ -20,6 +19,8 @@ __host__ __device__ Camera::Camera(const glm::vec3& origin, const glm::vec3& vie
   , mLeftButtonPressed(false)
   , mFocalLength(1.0f)
   , mRotateCenter(viewPoint)
+  , mDefocusAngle(1)
+  , mFocusDistance(0.7f)
 {
   mRotateLength = glm::length(mOrigin - mRotateCenter);
   mForward = glm::normalize(viewPoint - origin);
@@ -102,9 +103,15 @@ void Camera::onKeyPressed(const QInputEvent* event)
   }
 }
 void Camera::onKeyReleased(const QInputEvent* event) {}
-Ray Camera::getRay(const float x, const float y) const
+Ray Camera::getRay(const float x, const float y, curandState* state) const
 {
-  Ray ray(mOrigin,
+  auto origin = mOrigin;
+  if (mDefocusAngle > 0)
+  {
+    origin = lensDiskSample(mOrigin, state);
+  }
+
+  Ray ray(origin,
     mSpaceImageInfo.mLowerLeftCorner + x * mSpaceImageInfo.mHorizontal +
       y * mSpaceImageInfo.mVertical);
 
@@ -115,7 +122,7 @@ void Camera::setAspect(const float aspect)
   mAspect = aspect;
 
   float theta = mVFOV * M_PI / 180;
-  mSpaceImageInfo.mHeight = mFocalLength * tan(theta / 2) * 2.0f;
+  mSpaceImageInfo.mHeight = mFocalLength * tan(theta / 2) * 2.0f * mFocusDistance;
   mSpaceImageInfo.mWidth = aspect * mSpaceImageInfo.mHeight;
   update();
 }
@@ -129,27 +136,22 @@ glm::vec3 Camera::getCameraOrigin() const
 }
 void Camera::moveToLeft()
 {
-  // TODO: 尝试直接修改mRotateCenter -= mSpeed * mRight
-  auto origin = mOrigin - mSpeed * mRight;
-  mForward = glm::normalize(mRotateCenter - origin);
+  mRotateCenter -= mSpeed * mRight;
   update();
 }
 void Camera::moveToRight()
 {
-  auto origin = mOrigin + mSpeed * mRight;
-  mForward = glm::normalize(mRotateCenter - origin);
+  mRotateCenter += mSpeed * mRight;
   update();
 }
 void Camera::moveToTop()
 {
-  auto origin = mOrigin + mSpeed * mUp;
-  mForward = glm::normalize(mRotateCenter - origin);
+  mRotateCenter += mSpeed * mUp;
   update();
 }
 void Camera::moveToBottom()
 {
-  auto origin = mOrigin - mSpeed * mUp;
-  mForward = glm::normalize(mRotateCenter - origin);
+  mRotateCenter -= mSpeed * mUp;
   update();
 }
 void Camera::updateOrientation()
@@ -171,22 +173,34 @@ void Camera::updateSpaceImageInformation()
   glm::vec3 right = mOrientation * glm::cross(mForward, mUp);
 
   glm::vec3 centerPoint = mOrigin + forward * mFocalLength;
-  mSpaceImageInfo.mLowerLeftCorner =
-    centerPoint - right * mSpaceImageInfo.mWidth * 0.5f - up * mSpaceImageInfo.mHeight * 0.5f;
+  mSpaceImageInfo.mLowerLeftCorner = centerPoint + mFocusDistance * forward -
+    right * mSpaceImageInfo.mWidth * 0.5f - up * mSpaceImageInfo.mHeight * 0.5f;
   mSpaceImageInfo.mHorizontal = right * mSpaceImageInfo.mWidth;
   mSpaceImageInfo.mVertical = up * mSpaceImageInfo.mHeight;
+
+  // 更新透镜平面信息
+  float radian = mDefocusAngle * M_PI / 180.0f;
+  float defocusRadius = mFocusDistance * tanf(radian / 2);
+  mLensXVector = right * defocusRadius;
+  mLensYVector = up * defocusRadius;
+}
+
+__device__
+glm::vec3 Camera::lensDiskSample(const glm::vec3& center,curandState* state) const
+{
+  glm::vec3 unitVector = randomInUnitDisk(state);
+
+  return center + unitVector.x * mLensXVector + unitVector.y * mLensYVector;
 }
 __device__ glm::vec3 Camera::randomInUnitDisk(curandState* state) const
 {
   while (true)
   {
-    glm::vec3 randVec(curand_uniform(state) * 2.0f - 1.0f, curand_uniform(state) * 2.0f - 1.0f, 0.0f);
+    glm::vec3 randVec(
+      curand_uniform(state) * 2.0f - 1.0f, curand_uniform(state) * 2.0f - 1.0f, 0.0f);
     if (glm::length(randVec) < 1)
     {
       return randVec;
     }
-    
   }
-  
-  
 }
