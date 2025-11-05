@@ -6,6 +6,7 @@
 #include <qevent.h>
 #include <iostream>
 
+
 __host__ __device__ Camera::Camera(const glm::vec3& origin, const glm::vec3& viewPoint, float vfov, float aspect)
   : mOrigin(origin)
   , mUp(0.0f, 1.0f, 0.0f)
@@ -22,6 +23,8 @@ __host__ __device__ Camera::Camera(const glm::vec3& origin, const glm::vec3& vie
 {
   mRotateLength = glm::length(mOrigin - mRotateCenter);
   mForward = glm::normalize(viewPoint - origin);
+  mRight = mOrientation * glm::cross(mForward, mUp);
+  printf("right: %f, %f, %f\n", mRight.x, mRight.y, mRight.z);
   setAspect(aspect);
 }
 
@@ -126,22 +129,26 @@ glm::vec3 Camera::getCameraOrigin() const
 }
 void Camera::moveToLeft()
 {
-  mOrigin += mSpeed * mRight;
+  auto origin = mOrigin - mSpeed * mRight;
+  mForward = glm::normalize(mRotateCenter - origin);
   update();
 }
 void Camera::moveToRight()
 {
-  mOrigin -= mSpeed * mRight;
+  auto origin = mOrigin + mSpeed * mRight;
+  mForward = glm::normalize(mRotateCenter - origin);
   update();
 }
 void Camera::moveToTop()
 {
-  mOrigin -= mSpeed * mUp;
+  auto origin = mOrigin + mSpeed * mUp;
+  mForward = glm::normalize(mRotateCenter - origin);
   update();
 }
 void Camera::moveToBottom()
 {
-  mOrigin += mSpeed * mUp;
+  auto origin = mOrigin - mSpeed * mUp;
+  mForward = glm::normalize(mRotateCenter - origin);
   update();
 }
 void Camera::updateOrientation()
@@ -167,4 +174,18 @@ void Camera::updateSpaceImageInformation()
     centerPoint - right * mSpaceImageInfo.mWidth * 0.5f - up * mSpaceImageInfo.mHeight * 0.5f;
   mSpaceImageInfo.mHorizontal = right * mSpaceImageInfo.mWidth;
   mSpaceImageInfo.mVertical = up * mSpaceImageInfo.mHeight;
+}
+__device__ glm::vec3 Camera::randomInUnitDisk(curandState* state) const
+{
+  while (true)
+  {
+    glm::vec3 randVec(curand_uniform(state) * 2.0f - 1.0f, curand_uniform(state) * 2.0f - 1.0f, 0.0f);
+    if (glm::length(randVec) < 1)
+    {
+      return randVec;
+    }
+    
+  }
+  
+  
 }

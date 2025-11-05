@@ -144,7 +144,7 @@ struct RayTracer::Impl
     , mResourceSize(0)
     , d_rand_state(nullptr)
   {
-    mCamera = std::make_shared<Camera>(glm::vec3(0.0f, 0.0f, 0.7f), 45.0f, 1920.0 / 1080);
+    mCamera = std::make_shared<Camera>(glm::vec3(0.0f, 0.0f, 0.7f), glm::vec3(0.0f, 0.0f, -1.0f), 90.0f, 1920.0 / 1080);
 
     cudaMalloc(&dList, sizeof(Hitable*) * HITABLE_SIZE);
     cudaMalloc(&dWorld, sizeof(Hitable*));
