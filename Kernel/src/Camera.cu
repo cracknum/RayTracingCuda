@@ -19,13 +19,12 @@ __host__ __device__ Camera::Camera(
   , mLeftButtonPressed(false)
   , mFocalLength(1.0f)
   , mRotateCenter(viewPoint)
-  , mDefocusAngle(1)
-  , mFocusDistance(0.7f)
+  , mDefocusAngle(0)
+  , mFocusDistance(10.0f)
 {
   mRotateLength = glm::length(mOrigin - mRotateCenter);
   mForward = glm::normalize(viewPoint - origin);
-  mRight = mOrientation * glm::cross(mForward, mUp);
-  printf("right: %f, %f, %f\n", mRight.x, mRight.y, mRight.z);
+  mRight = mOrientation * glm::cross(mUp, mForward);
   setAspect(aspect);
 }
 
@@ -64,6 +63,7 @@ void Camera::onMouseMove(const QInputEvent* event)
   mPitch = glm::clamp(mPitch, -89.0f, 89.0f);
 
   update();
+  std::cout << "distance: " << glm::length(mOrigin) << std::endl;
 }
 
 void Camera::onWheelEvent(const QInputEvent* event)
