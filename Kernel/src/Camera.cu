@@ -129,6 +129,7 @@ glm::vec3 Camera::getCameraOrigin() const
 }
 void Camera::moveToLeft()
 {
+  // TODO: 尝试直接修改mRotateCenter -= mSpeed * mRight
   auto origin = mOrigin - mSpeed * mRight;
   mForward = glm::normalize(mRotateCenter - origin);
   update();
