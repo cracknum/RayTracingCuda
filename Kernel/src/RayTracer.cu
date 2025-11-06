@@ -60,7 +60,8 @@ __device__ Material::Color color(curandState* state, const Ray& r, Hitable** dWo
 __global__ void createWorld(Hitable** dList, Hitable** dWorld, curandState* state)
 {
   uint count = 0;
-  dList[count++] = new Sphere(glm::vec3(0, -1000, 0), 1000, new Lambertian(glm::vec3(0.5f, 0.5f, 0.5f)));
+  dList[count++] =
+    new Sphere(glm::vec3(0, -1000, 0), 1000, new Lambertian(glm::vec3(0.5f, 0.5f, 0.5f)));
   for (int i = -11; i < 11; i++)
   {
     for (int j = -11; j < 11; j++)
@@ -68,14 +69,16 @@ __global__ void createWorld(Hitable** dList, Hitable** dWorld, curandState* stat
       auto choose_mat = curand_uniform(state);
       glm::vec3 center(i + 0.9 * curand_uniform(state), 0.2, j + 0.9 * curand_uniform(state));
 
-        if ((glm::length(center - glm::vec3(4.0f, 0.2f, 0.0f)) > 0.9))
+      if ((glm::length(center - glm::vec3(4.0f, 0.2f, 0.0f)) > 0.9))
       {
         if (choose_mat < 0.8)
         {
           glm::vec3 color(curand_uniform(state) * curand_uniform(state),
             curand_uniform(state) * curand_uniform(state),
             curand_uniform(state) * curand_uniform(state));
-          dList[count] = new Sphere(center, 0.2, new Lambertian(color));
+          glm::vec3 endCenter = glm::vec3(curand_uniform(state) * 0.5f,
+            curand_uniform(state) * 0.5f, curand_uniform(state) * 0.5f) + center;
+          dList[count] = new Sphere(center, endCenter, 0.2, new Lambertian(color));
         }
         else if (choose_mat < 0.95)
         {
@@ -92,8 +95,7 @@ __global__ void createWorld(Hitable** dList, Hitable** dWorld, curandState* stat
       }
     }
   }
-  dList[count++] =
-    new Sphere(glm::vec3(0, 1, 0), 1.0, new Dielectric(1.5f));
+  dList[count++] = new Sphere(glm::vec3(0, 1, 0), 1.0, new Dielectric(1.5f));
   dList[count++] = new Sphere(glm::vec3(0, 1, 3), 1.0, new Lambertian(glm::vec3(0.4f, 0.2f, 0.1f)));
   dList[count++] = new Sphere(glm::vec3(0, 1, -3), 1.0, new Metal(glm::vec3(0.7, 0.6, 0.5)));
   *dWorld = new HitableList(dList, count);

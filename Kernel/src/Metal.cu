@@ -11,7 +11,7 @@ bool Metal::scatter(
   (void)randState;
 
   glm::vec3 scatterDirection = reflect(ray.direction(), record.normal);
-  scatterRay = Ray(record.point, scatterDirection);
+  scatterRay = Ray(record.point, scatterDirection, ray.renderTime());
   color = mAlbedo;
 
   return true;

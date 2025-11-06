@@ -113,7 +113,7 @@ Ray Camera::getRay(const float x, const float y, curandState* state) const
 
   Ray ray(origin,
     mSpaceImageInfo.mLowerLeftCorner + x * mSpaceImageInfo.mHorizontal +
-      y * mSpaceImageInfo.mVertical);
+      y * mSpaceImageInfo.mVertical, curand_uniform(state));
 
   return ray;
 }

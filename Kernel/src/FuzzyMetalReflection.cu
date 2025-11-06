@@ -14,7 +14,7 @@ bool FuzzyMetalReflection::scatter(
 {
   glm::vec3 scatterDirection = reflect(ray.direction(), record.normal);
   scatterDirection += randomUnitVector(randState) * mFuzzy;
-  scatterRay = Ray(record.point, scatterDirection);
+  scatterRay = Ray(record.point, scatterDirection, ray.renderTime());
   color = mAlbedo;
 
   return glm::dot(scatterDirection, record.normal) > 0.0f;

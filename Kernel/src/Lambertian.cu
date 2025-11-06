@@ -15,7 +15,7 @@ bool Lambertian::scatter(curandState* randState, const Ray& ray, const HitRecord
   {
     scatterDirection = record.normal;
   }
-  scatterRay = Ray(record.point, scatterDirection);
+  scatterRay = Ray(record.point, scatterDirection, ray.renderTime());
   color = mAlbedo;
   return true;
 }

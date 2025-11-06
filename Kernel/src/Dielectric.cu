@@ -30,7 +30,7 @@ bool Dielectric::scatter(
     direction = refract(unitDirection, record.normal, ri);
   }
 
-  scatterRay = Ray(record.point, direction);
+  scatterRay = Ray(record.point, direction, ray.renderTime());
 
   return true;
 }
