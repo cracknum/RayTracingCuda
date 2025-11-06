@@ -1,8 +1,9 @@
 #ifndef LAMBERTIAN_H
 #define LAMBERTIAN_H
 #include "Material.cuh"
+#include "MaterialExports.hpp"
 
-class Lambertian final : public Material {
+class MATERIAL_API Lambertian final : public Material {
 public:
   __device__
   explicit Lambertian(const Color& albedo);

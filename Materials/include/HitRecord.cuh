@@ -1,11 +1,11 @@
-#ifndef HITABLE_CUDA_H
-#define HITABLE_CUDA_H
-#include "Ray.cuh"
+#ifndef HIT_RECORD_CUDA_CXX
+#define HIT_RECORD_CUDA_CXX
+#include "Material.cuh"
 #include <glm/glm.hpp>
+#include <device_launch_parameters.h>
+#include "Ray.cuh"
 
-class Material;
-
-struct HitRecord
+struct MATERIAL_API HitRecord
 {
     float t;
     glm::vec3 point;
@@ -20,14 +20,4 @@ struct HitRecord
     normal = front_face ? outwardNormal : -outwardNormal;
   }
 };
-
-class Hitable
-{
-    public:
-        __device__ Hitable() {};
-        __device__ virtual ~Hitable() {};
-        __device__ virtual bool hit(const Ray& r, float tMin, float tMax, HitRecord& record) const = 0;
-
-};
-
-#endif // HITABLE_CUDA_H
+#endif

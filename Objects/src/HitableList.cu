@@ -1,4 +1,5 @@
 #include "HitableList.cuh"
+#include "HitRecord.cuh"
 
 __device__ HitableList::HitableList() {}
 

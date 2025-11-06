@@ -1,7 +1,8 @@
 #ifndef HITABLE_LIST_CUDA_H
 #define HITABLE_LIST_CUDA_H
 #include "Hitable.cuh"
-class HitableList: public Hitable
+#include "ObjectExports.hpp"
+class OBJECT_API HitableList: public Hitable
 {
     public:
     __device__ HitableList();

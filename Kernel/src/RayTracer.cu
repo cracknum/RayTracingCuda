@@ -1,6 +1,7 @@
 #include "Camera.cuh"
 #include "Hitable.cuh"
 #include "HitableList.cuh"
+#include "HitRecord.cuh"
 #include "Ray.cuh"
 #include "RayTracer.cuh"
 

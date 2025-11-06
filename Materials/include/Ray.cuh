@@ -3,8 +3,8 @@
 #include <cuda.h>
 #include <device_launch_parameters.h>
 #include <glm/glm.hpp>
-
-class Ray
+#include "MaterialExports.hpp"
+class MATERIAL_API Ray
 {
 public:
   __device__ __forceinline__ Ray() {}

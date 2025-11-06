@@ -4,14 +4,19 @@
 #include <curand_kernel.h>
 #include <glm/ext/quaternion_geometric.hpp>
 #include <glm/glm.hpp>
+#include "MaterialExports.hpp"
+#include <device_launch_parameters.h>
+
 
 class Ray;
 class HitRecord;
 
-class Material
+class MATERIAL_API Material
 {
 public:
   using Color = glm::vec3;
+  __device__ 
+  Material() = default;
   __device__
   virtual ~Material() = default;
   __device__

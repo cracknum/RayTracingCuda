@@ -1,6 +1,6 @@
 #include "Metal.cuh"
 
-#include "Hitable.cuh"
+#include "HitRecord.cuh"
 Metal::Metal(const Color& albedo)
 {
   mAlbedo = albedo;

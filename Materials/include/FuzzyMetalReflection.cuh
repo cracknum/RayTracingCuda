@@ -1,8 +1,9 @@
 #ifndef FUZZYMETALREFLECTION_H
 #define FUZZYMETALREFLECTION_H
 #include "Material.cuh"
+#include "MaterialExports.hpp"
 
-class FuzzyMetalReflection final: public Material {
+class MATERIAL_API FuzzyMetalReflection final: public Material {
 public:
   __device__
   FuzzyMetalReflection(const Color& color, float fuzzy);

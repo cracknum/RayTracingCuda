@@ -1,7 +1,10 @@
 #include "Sphere.cuh"
 
 #include "Material.cuh"
+#include "HitRecord.cuh"
 __device__ Sphere::Sphere() {}
+
+__device__
 Sphere::~Sphere() {
   if (mMaterial)
   {

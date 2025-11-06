@@ -1,6 +1,6 @@
 #include "Dielectric.cuh"
 
-#include "Hitable.cuh"
+#include "HitRecord.cuh"
 __device__ Dielectric::Dielectric(float refractIndex)
   :mRefractIndex(refractIndex)
 {}

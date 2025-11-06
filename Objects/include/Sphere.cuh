@@ -3,9 +3,10 @@
 #include "Hitable.cuh"
 #include <glm/glm.hpp>
 #include "Ray.cuh"
+#include "ObjectExports.hpp"
 
 class Material;
-class Sphere: public Hitable
+class OBJECT_API Sphere: public Hitable
 {
     public:
     __device__ Sphere();

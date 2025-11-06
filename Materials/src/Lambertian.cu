@@ -1,6 +1,6 @@
 #include "Lambertian.cuh"
 
-#include "Hitable.cuh"
+#include "HitRecord.cuh"
 #include "Ray.cuh"
 Lambertian::Lambertian(const Color& albedo)
 {

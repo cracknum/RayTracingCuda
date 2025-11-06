@@ -1,8 +1,9 @@
 #ifndef METAL_H
 #define METAL_H
 #include "Material.cuh"
+#include "MaterialExports.hpp"
 
-class Metal final: public Material {
+class MATERIAL_API Metal final: public Material {
 public:
   __device__
   Metal(const Color& albedo);

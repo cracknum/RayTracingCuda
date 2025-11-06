@@ -1,9 +1,9 @@
 #ifndef DIELECTRIC_CUH
 #define DIELECTRIC_CUH
 #include "Material.cuh"
+#include "MaterialExports.hpp"
 
-
-class Dielectric: public Material {
+class MATERIAL_API Dielectric: public Material {
 public:
   __device__
   Dielectric(float refractIndex);

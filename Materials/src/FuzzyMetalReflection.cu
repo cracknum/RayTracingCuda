@@ -1,7 +1,7 @@
 #include "FuzzyMetalReflection.cuh"
 
-#include "Hitable.cuh"
 #include "Ray.cuh"
+#include "HitRecord.cuh"
 FuzzyMetalReflection::FuzzyMetalReflection(const Color& color, float fuzzy)
 {
   mAlbedo = color;

@@ -9,37 +9,22 @@ set(header_files
         include/Macro.h
         include/ImageMaker.h
         include/KernelExports.hpp
-        include/Ray.cuh
         include/RayTracer.cuh
-        include/Hitable.cuh
-        include/Sphere.cuh
-        include/HitableList.cuh
         include/Camera.cuh
         include/Dispatcher.hpp
         include/Observer.hpp
-        include/Material.cuh
-        include/Lambertian.cuh
-        include/Metal.cuh
-        include/FuzzyMetalReflection.cuh
-        include/Dielectric.cuh
 )
 set(source_files
         src/ImageMaker.cu
         src/RayTracer.cu
-        src/Sphere.cu
-        src/HitableList.cu
         src/Camera.cu
         src/Dispatcher.cpp
-        src/Lambertian.cu
-        src/Metal.cu
-        src/FuzzyMetalReflection.cu
-        src/Dielectric.cu
 )
 
 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-diag-suppress=20012,20014")
 
 add_library(${PROJECT_NAME} SHARED ${source_files} ${header_files})
-target_link_libraries(${PROJECT_NAME} PUBLIC CUDA::cudart glm::glm Qt5::OpenGL)
+target_link_libraries(${PROJECT_NAME} PUBLIC CUDA::cudart glm::glm Qt5::OpenGL Material Objects)
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 target_compile_definitions(${PROJECT_NAME} PRIVATE KERNEL_EXPORTS)
 
