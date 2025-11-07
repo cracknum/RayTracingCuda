@@ -9,10 +9,12 @@ set(header_files
         include/Hitable.cuh
         include/Sphere.cuh
         include/HitableList.cuh
+        include/AABB.cuh
 )
 set(source_files
         src/Sphere.cu
         src/HitableList.cu
+        src/AABB.cu
 )
 
 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-diag-suppress=20012,20014")

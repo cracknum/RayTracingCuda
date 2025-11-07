@@ -8,7 +8,7 @@ class OBJECT_API HitableList: public Hitable
     __device__ HitableList();
     __device__ HitableList(Hitable **l, int n);
     __device__ ~HitableList();
-    __device__ virtual bool hit(const Ray& r, float tMin, float tMax, HitRecord& record) const override;
+    __device__ virtual bool hit(const Ray& r, float tMin, float tMax, HitRecord& record) override;
 
     Hitable** mList;
     int mListSize;

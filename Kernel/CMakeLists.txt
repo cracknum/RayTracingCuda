@@ -13,7 +13,6 @@ set(header_files
         include/Camera.cuh
         include/Dispatcher.hpp
         include/Observer.hpp
-        include/Interval.cuh
 )
 set(source_files
         src/ImageMaker.cu
