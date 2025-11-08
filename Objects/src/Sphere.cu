@@ -81,7 +81,7 @@ __device__ bool Sphere::hit(const Ray& r, float tMin, float tMax, HitRecord& rec
 __device__ glm::vec2 Sphere::getSphereUV(const glm::vec3& point) const
 {
   auto theta = acosf(-point.y);
-  auto phi = atan2f(-point.z, point.x()) + M_PI;
+  auto phi = atan2f(-point.z, point.x) + M_PI;
   glm::vec2 result{ 0.0f };
   result.s = phi / (2 * M_PI);
   result.t = theta / M_PI;

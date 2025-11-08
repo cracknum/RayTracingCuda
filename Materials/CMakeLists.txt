@@ -1,6 +1,7 @@
 project(Material CUDA CXX)
 find_package(CUDAToolkit REQUIRED)
 find_package(glm CONFIG REQUIRED)
+find_package(Stb REQUIRED)
 set(CMAKE_CUDA_ARCHITECTURES 89)
 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-diag-suppress=20012,1394")
 
@@ -14,19 +15,21 @@ set(header_files
         include/Ray.cuh
         include/HitRecord.cuh
         include/Texture.cuh
+        include/TextureLoader.h
 )
 set(source_files
         src/Lambertian.cu
         src/Metal.cu
         src/FuzzyMetalReflection.cu
         src/Dielectric.cu
+        src/TextureLoader.cpp
 )
 
 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-diag-suppress=20012,20014")
 
 add_library(${PROJECT_NAME} STATIC ${source_files} ${header_files})
 target_link_libraries(${PROJECT_NAME} PUBLIC CUDA::cudart glm::glm)
-target_include_directories(${PROJECT_NAME} PUBLIC include)
+target_include_directories(${PROJECT_NAME} PUBLIC include ${Stb_INCLUDE_DIR})
 target_compile_definitions(${PROJECT_NAME} PRIVATE MATERIAL_EXPORTS)
 
 #for error ptxas fatal : Unresolved extern function
