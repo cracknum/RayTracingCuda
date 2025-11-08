@@ -5,7 +5,7 @@
 #include "Ray.cuh"
 #include <glm/glm.hpp>
 class Material;
-class HitRecord;
+struct HitRecord;
 
 class OBJECT_API Hitable
 {

@@ -2,6 +2,8 @@
 
 #include "HitRecord.cuh"
 #include "Material.cuh"
+
+#include <corecrt_math_defines.h>
 __device__ Sphere::Sphere() {}
 
 __device__ Sphere::~Sphere()
@@ -17,8 +19,7 @@ __device__ Sphere::Sphere(const glm::vec3& center, float radius, Material* mater
   updateBoundingBox(center, radius);
 }
 
-__device__
-void Sphere::updateBoundingBox(const glm::vec3& center, float radius)
+__device__ void Sphere::updateBoundingBox(const glm::vec3& center, float radius)
 {
   glm::vec3 corner[2] = { center - radius, center + radius };
   mBoundingBox = AABB(Interval<float>(corner[0].x, corner[1].x),
@@ -31,7 +32,7 @@ __device__ Sphere::Sphere(
   , mRadius(fmaxf(0.0f, radius))
   , mMaterial(material)
 {
-   updateBoundingBox(startCenter, radius);
+  updateBoundingBox(startCenter, radius);
 }
 
 __device__ bool Sphere::hit(const Ray& r, float tMin, float tMax, HitRecord& record)
@@ -52,7 +53,12 @@ __device__ bool Sphere::hit(const Ray& r, float tMin, float tMax, HitRecord& rec
       record.t = temp;
       record.point = r.pointAtParameter(record.t);
       record.material = mMaterial;
+
       glm::vec3 outwardNormal = (record.point - currentCenter) / mRadius;
+      // 使用outwardNormal的原因是这个点刚好在已(0,0,0)为球心以1为半径的球上
+      glm::vec2 uv = getSphereUV(outwardNormal);
+      record.u = uv.s;
+      record.v = uv.t;
       record.setFaceNormal(r, outwardNormal);
       return true;
     }
@@ -64,8 +70,20 @@ __device__ bool Sphere::hit(const Ray& r, float tMin, float tMax, HitRecord& rec
       glm::vec3 outwardNormal = (record.point - currentCenter) / mRadius;
       record.setFaceNormal(r, outwardNormal);
       record.material = mMaterial;
+      glm::vec2 uv = getSphereUV(outwardNormal);
+      record.u = uv.s;
+      record.v = uv.t;
       return true;
     }
   }
   return false;
+}
+__device__ glm::vec2 Sphere::getSphereUV(const glm::vec3& point) const
+{
+  auto theta = acosf(-point.y);
+  auto phi = atan2f(-point.z, point.x()) + M_PI;
+  glm::vec2 result{ 0.0f };
+  result.s = phi / (2 * M_PI);
+  result.t = theta / M_PI;
+  return result;
 }

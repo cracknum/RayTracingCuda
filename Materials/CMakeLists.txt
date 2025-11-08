@@ -13,6 +13,7 @@ set(header_files
         include/Dielectric.cuh
         include/Ray.cuh
         include/HitRecord.cuh
+        include/Texture.cuh
 )
 set(source_files
         src/Lambertian.cu
