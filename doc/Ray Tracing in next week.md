@@ -20,7 +20,7 @@ $$
 BVH主要通过使用AABB盒的方式进行子树递归划分，最终形成整体的包围数，并且不要求左右子树的顺序，毕竟BVH的主要目的就是为了快速计算是否击中，而不是其他目的
 
 <div align=center>
-<img src="./images/BVH.png" width="40%" height="40%"/>
+<img src="images/BVH.png" width="40%" height="40%"/>
 </div>
 
 通过这张图的观察可知，光线有这样集中情况：
@@ -34,7 +34,7 @@ BVH主要通过使用AABB盒的方式进行子树递归划分，最终形成整�
 如上图所示将蓝色的轴作为x轴，绿色的轴作为y轴，将和包围框相交的光线与x轴相交的两个点的距离记为$t_0$, $t_1$,与y轴相交的两个点的距离即为$t_2$, $t_3$,将这三个时间绘制到一维轴上
 
 <div align=center>
-<img src="./images/BVH_time.png"/>
+<img src="images/BVH_time.png"/>
 </div>
 
 同样可以将不和包围框（与包围框的延展线）相交的部分绘制到一维数轴上会发现距离上并没有重叠的部分。

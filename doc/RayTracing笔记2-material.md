@@ -16,7 +16,7 @@ return attenuation * ray_color(scattered, depth-1, world);
 # 镜面反射
 1. 与lambertian reflection的区别就是这种不再是随机在单元球中漫反射了，而是入射光线和出射光线关于法线对称
 2. 实现方法
-![](./metal_ray_reflection.png)
+![](images/metal_ray_reflection.png)
 ```c++
 inline vec3 reflect (const vec3& v, const vec3& n)
 {
@@ -28,7 +28,7 @@ return v - 2 * dot(v,n)*n;
 # fuzzy reflection
 1. 在镜面反射的基础上再做一次fuzzy，当fuzzy为0时即为镜面反射，当fuzzy为1时就非常接近lambertian reflection
 2. 实现
-![](./metal_fuzzy_ray_reflection.png)
+![](images/metal_fuzzy_ray_reflection.png)
 ```c++
 vec3 R = reflect(r.direction(), rec.normal); // 理想镜面反射方向
 vec3 fuzz = random_in_unit_sphere() * fuzziness; // fuzziness 控制模糊程度
