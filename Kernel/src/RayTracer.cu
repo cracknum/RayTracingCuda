@@ -216,7 +216,7 @@ struct RayTracer::Impl
 #elif defined(EARTH_SPHERE)
     auto* textureLoader = TextureLoader::getInstance();
     auto texture =
-      textureLoader->getTexture("F:/Workspace/Projects/RayTracingCuda/res/earthmap.jpg");
+      textureLoader->getTexture("../../res/earthmap.jpg");
     createEarthWorld<<<1, 1>>>(dList, dWorld, d_create_world_state, texture);
 #endif
   }
