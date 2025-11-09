@@ -15,14 +15,12 @@ set(header_files
         include/Ray.cuh
         include/HitRecord.cuh
         include/Texture.cuh
-        include/TextureLoader.h
 )
 set(source_files
         src/Lambertian.cu
         src/Metal.cu
         src/FuzzyMetalReflection.cu
         src/Dielectric.cu
-        src/TextureLoader.cpp
 )
 
 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-diag-suppress=20012,20014")

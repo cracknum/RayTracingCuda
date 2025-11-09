@@ -1,10 +1,11 @@
 #include "Camera.cuh"
+#include "HitRecord.cuh"
 #include "Hitable.cuh"
 #include "HitableList.cuh"
-#include "HitRecord.cuh"
 #include "Ray.cuh"
 #include "RayTracer.cuh"
 
+#include "../include/TextureLoader.h"
 #include "Dielectric.cuh"
 #include "Dispatcher.hpp"
 #include "FuzzyMetalReflection.cuh"
@@ -20,6 +21,8 @@
 #include <iostream>
 
 #define HITABLE_SIZE (22 * 22 + 1 + 3)
+// #define BOUNCING_SPHERE
+#define EARTH_SPHERE
 namespace Kernel
 {
 __device__ Material::Color color(curandState* state, const Ray& r, Hitable** dWorld)
@@ -58,14 +61,14 @@ __device__ Material::Color color(curandState* state, const Ray& r, Hitable** dWo
   return Material::Color(0.0f, 0.0f, 0.0f);
 }
 
-__global__ void createWorld(Hitable** dList, Hitable** dWorld, curandState* state)
+__global__ void createBouncingWorld(Hitable** dList, Hitable** dWorld, curandState* state)
 {
   uint count = 0;
   dList[count++] =
     new Sphere(glm::vec3(0, -1000, 0), 1000, new Lambertian(glm::vec3(0.5f, 0.5f, 0.5f)));
-  for (int i = -11; i < 11; i++)
+  for (int i = -1; i <= 1; i++)
   {
-    for (int j = -11; j < 11; j++)
+    for (int j = -1; j <= 1; j++)
     {
       auto choose_mat = curand_uniform(state);
       glm::vec3 center(i + 0.9 * curand_uniform(state), 0.2, j + 0.9 * curand_uniform(state));
@@ -78,7 +81,8 @@ __global__ void createWorld(Hitable** dList, Hitable** dWorld, curandState* stat
             curand_uniform(state) * curand_uniform(state),
             curand_uniform(state) * curand_uniform(state));
           glm::vec3 endCenter = glm::vec3(curand_uniform(state) * 0.5f,
-            curand_uniform(state) * 0.5f, curand_uniform(state) * 0.5f) + center;
+                                  curand_uniform(state) * 0.5f, curand_uniform(state) * 0.5f) +
+            center;
           dList[count] = new Sphere(center, endCenter, 0.2, new Lambertian(color));
         }
         else if (choose_mat < 0.95)
@@ -104,7 +108,23 @@ __global__ void createWorld(Hitable** dList, Hitable** dWorld, curandState* stat
   printf("hitable size: %d\n", count);
 }
 
-__global__ void destroyWorld(Hitable** dList, Hitable** dWorld)
+__global__ void destroyBouncingWorld(Hitable** dList, Hitable** dWorld)
+{
+  auto sdWorld = static_cast<HitableList*>(*dWorld);
+  for (int i = 0; i < sdWorld->mListSize; ++i)
+  {
+    delete *(dList + i);
+  }
+  delete *dWorld;
+}
+
+__global__ void createEarthWorld(
+  Hitable** dList, Hitable** dWorld, curandState* state, cudaTextureObject_t texture)
+{
+  dList[0] = new Sphere(glm::vec3(0, 0, 0), 1.0, new Lambertian(texture));
+  *dWorld = new HitableList(dList, 1);
+}
+__global__ void destroyEarthWorld(Hitable** dList, Hitable** dWorld)
 {
   auto sdWorld = static_cast<HitableList*>(*dWorld);
   for (int i = 0; i < sdWorld->mListSize; ++i)
@@ -170,6 +190,7 @@ struct RayTracer::Impl
   Hitable** dWorld;
   curandState* d_rand_state;
   curandState* d_create_world_state;
+  cudaTextureObject_t mTexture;
   ImageInfo mImageInfo;
 
   Impl()
@@ -178,6 +199,7 @@ struct RayTracer::Impl
     , mResourceSize(0)
     , d_rand_state(nullptr)
     , d_create_world_state(nullptr)
+    , mTexture(0)
   {
     mCamera = std::make_shared<Camera>(
       glm::vec3(5.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 45.0f, 1920.0 / 1080);
@@ -189,14 +211,30 @@ struct RayTracer::Impl
     initRandom<<<1, 1>>>(1, 1, d_create_world_state);
     auto errorId = cudaGetLastError();
     std::cout << __LINE__ << ":error:" << cudaGetErrorString(errorId) << std::endl;
-    createWorld<<<1, 1>>>(dList, dWorld, d_create_world_state);
+#if defined(BOUNCING_SPHERE)
+    createBouncingWorld<<<1, 1>>>(dList, dWorld, d_create_world_state);
+#elif defined(EARTH_SPHERE)
+    auto* textureLoader = TextureLoader::getInstance();
+    auto texture =
+      textureLoader->getTexture("F:/Workspace/Projects/RayTracingCuda/res/earthmap.jpg");
+    createEarthWorld<<<1, 1>>>(dList, dWorld, d_create_world_state, texture);
+#endif
   }
   ~Impl()
   {
-    destroyWorld<<<1, 1>>>(dList, dWorld);
+#if defined(BOUNCING_SPHERE)
+    destroyBouncingWorld<<<1, 1>>>(dList, dWorld);
+#elif defined(EARTH_SPHERE)
+    destroyEarthWorld<<<1, 1>>>(dList, dWorld);
+#endif
+
     cudaFree(dList);
     cudaFree(dWorld);
     cudaFree(d_create_world_state);
+    if (mTexture)
+    {
+      cudaDestroyTextureObject(mTexture);
+    }
   }
 };
 

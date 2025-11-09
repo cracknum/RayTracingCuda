@@ -2,11 +2,10 @@
 #define TEXTURE_LOADER_H
 #include <cuda_runtime.h>
 #include <string>
-#include "MaterialExports.hpp"
 
-template<typename ComponentType>
+template <typename ComponentType>
 struct Image;
-class MATERIAL_API TextureLoader {
+class TextureLoader {
 public:
   static TextureLoader* getInstance();
   cudaTextureObject_t getTexture(const std::string& path);

@@ -1,15 +1,14 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
+#include "MaterialExports.hpp"
 #include <cuda_runtime.h>
 #include <curand_kernel.h>
+#include <device_launch_parameters.h>
 #include <glm/ext/quaternion_geometric.hpp>
 #include <glm/glm.hpp>
-#include "MaterialExports.hpp"
-#include <device_launch_parameters.h>
-
 
 class Ray;
-class HitRecord;
+struct HitRecord;
 
 class MATERIAL_API Material
 {
@@ -96,6 +95,7 @@ public:
 
     return -onUnitSphere;
   }
+  cudaTextureObject_t mTexture;
   Color mAlbedo = {0.0f, 0.0f, 0.0f};
 };
 

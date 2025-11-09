@@ -8,6 +8,8 @@ public:
   __device__
   explicit Lambertian(const Color& albedo);
   __device__
+  explicit Lambertian(cudaTextureObject_t texture);
+  __device__
   ~Lambertian() override = default;
   __device__
   bool scatter(curandState* randState, const Ray& ray, const HitRecord& record, Color& color, Ray& scatterRay) override;

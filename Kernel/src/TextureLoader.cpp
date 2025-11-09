@@ -1,4 +1,4 @@
-#include "TextureLoader.h"
+#include "../include/TextureLoader.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include <iostream>
 #include <stb_image.h>
@@ -19,13 +19,6 @@ struct Image
   }
   ~Image()
   {
-    if (data)
-    {
-      delete data;
-      width = 0;
-      height = 0;
-      channels = 0;
-    }
   }
 };
 TextureLoader* TextureLoader::getInstance()
@@ -40,11 +33,11 @@ cudaTextureObject_t TextureLoader::getTexture(const std::string& path)
   cudaArray_t array;
   cudaChannelFormatDesc format = cudaCreateChannelDesc<uchar4>();
   cudaMallocArray(&array, &format, image.width, image.height);
-
   int srcPitch = image.width * image.channels * sizeof(unsigned char);
-  cudaMemcpy2DToArray(
-    array, 0, 0, image.data, srcPitch, srcPitch, image.height, cudaMemcpyHostToDevice);
 
+  cudaError_t err = cudaMemcpy2DToArray(
+    array, 0, 0, image.data, srcPitch, srcPitch, image.height, cudaMemcpyHostToDevice);
+  std::cout << __LINE__ << ":error:" << cudaGetErrorString(err) << std::endl;
   cudaResourceDesc resource{};
   resource.resType = cudaResourceTypeArray;
   resource.res.array.array = array;
@@ -55,8 +48,9 @@ cudaTextureObject_t TextureLoader::getTexture(const std::string& path)
   // 因为使用的是unsigned char，所以这里自动进行归一化，归一化除的最大值为255，因为255是unsigned char的最大值
   texture_desc.readMode = cudaReadModeNormalizedFloat;
   texture_desc.normalizedCoords = 1;
-
   cudaCreateTextureObject(&texture, &resource, &texture_desc, nullptr);
+
+  delete image.data;
   return texture;
 }
 Image<unsigned char> TextureLoader::loadImage(const std::string& path)
@@ -75,8 +69,9 @@ Image<unsigned char> TextureLoader::loadImage(const std::string& path)
 
   image.width = width;
   image.height = height;
-  image.channels = channels;
-  image.data = new unsigned char[width * height * channels]{ 0 };
-  memcpy(image.data, data, width * height * channels);
+  image.channels = 4;
+  image.data = new unsigned char[width * height * image.channels]{ 0 };
+  memcpy(image.data, data, width * height * image.channels);
+  stbi_image_free(data);
   return image;
 }

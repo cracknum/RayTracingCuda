@@ -13,12 +13,14 @@ set(header_files
         include/Camera.cuh
         include/Dispatcher.hpp
         include/Observer.hpp
+        include/TextureLoader.h
 )
 set(source_files
         src/ImageMaker.cu
         src/RayTracer.cu
         src/Camera.cu
         src/Dispatcher.cpp
+        src/TextureLoader.cpp
 )
 
 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-diag-suppress=20012,20014")
