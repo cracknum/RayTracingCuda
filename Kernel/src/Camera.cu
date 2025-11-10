@@ -63,7 +63,7 @@ void Camera::onMouseMove(const QInputEvent* event)
   mPitch = glm::clamp(mPitch, -89.0f, 89.0f);
 
   update();
-  std::cout << "distance: " << glm::length(mOrigin) << std::endl;
+  std::cout << "rotate center: " << mOrigin.x << " " << mOrigin.y << " " << mOrigin.z << std::endl;
 }
 
 void Camera::onWheelEvent(const QInputEvent* event)
@@ -73,12 +73,12 @@ void Camera::onWheelEvent(const QInputEvent* event)
   if (angleDelta.y() > 0)
   {
     // forward
-    mRotateLength -= mSpeed;
+    mRotateLength -= 1;
   }
   else
   {
     // backward
-    mRotateLength += mSpeed;
+    mRotateLength += 1;
   }
   update();
 }
@@ -177,6 +177,7 @@ void Camera::updateSpaceImageInformation()
     right * mSpaceImageInfo.mWidth * 0.5f - up * mSpaceImageInfo.mHeight * 0.5f;
   mSpaceImageInfo.mHorizontal = right * mSpaceImageInfo.mWidth;
   mSpaceImageInfo.mVertical = up * mSpaceImageInfo.mHeight;
+
 
   // 更新透镜平面信息
   float radian = mDefocusAngle * M_PI / 180.0f;

@@ -20,6 +20,8 @@ public:
   virtual ~Material() = default;
   __device__
   virtual bool scatter(curandState* randState, const Ray& ray, const HitRecord& record, Color& color, Ray& scatterRay) = 0;
+  __device__
+  virtual Color emitted(float u, float v, const glm::vec3& point){return Color(0, 0, 0);}
   /**
    * @param in 入射方向
    * @param normal 法线，需要单位向量

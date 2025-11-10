@@ -15,6 +15,7 @@ set(header_files
         include/Ray.cuh
         include/HitRecord.cuh
         include/Texture.cuh
+        include/DiffuseLight.cuh
 )
 set(source_files
         src/Lambertian.cu

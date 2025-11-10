@@ -20,10 +20,12 @@
 #include <curand_kernel.h>
 #include <device_launch_parameters.h>
 #include <iostream>
+#include "DiffuseLight.cuh"
 
 // #define BOUNCING_SPHERE
 // #define EARTH_SPHERE
-#define QUAD
+// #define QUAD
+#define CORNELL_BOX
 
 #if defined(BOUNCING_SPHERE)
 #define HITABLE_SIZE (22 * 22 + 1 + 3)
@@ -31,11 +33,13 @@
 #define HITABLE_SIZE 1
 #elif defined(QUAD)
 #define HITABLE_SIZE 5
+#elif defined(CORNELL_BOX)
+#define HITABLE_SIZE 6
 #endif
 
 namespace Kernel
 {
-__device__ Material::Color color(curandState* state, const Ray& r, Hitable** dWorld)
+__device__ Material::Color color(curandState* state, const Ray& r, Hitable** dWorld, const glm::vec3& background)
 {
   Ray currentRay = r;
   HitRecord record;
@@ -46,6 +50,7 @@ __device__ Material::Color color(curandState* state, const Ray& r, Hitable** dWo
     // 将最小值设置为0.001避免击中点进入到surface内部
     if ((*dWorld)->hit(currentRay, 0.001, FLT_MAX, record))
     {
+      Material::Color emittedColor = record.material->emitted(record.u, record.v, record.point);
       Material::Color albedo;
       Ray scatteredRay;
       if (record.material->scatter(state, currentRay, record, albedo, scatteredRay))
@@ -55,15 +60,11 @@ __device__ Material::Color color(curandState* state, const Ray& r, Hitable** dWo
       }
       else
       {
-        return Material::Color(0.0f, 0.0f, 0.0f);
+        return color + emittedColor;
       }
     }
     else
     {
-      glm::vec3 uDirection = glm::normalize(currentRay.direction());
-      float t = 0.5f * (uDirection.y + 1.0f);
-      Material::Color background =
-        ((1 - t) * glm::vec3(1.0f, 1.0f, 1.0f) + t * glm::vec3(0.5f, 0.7f, 1.0f));
       return color * background;
     }
   }
@@ -118,30 +119,11 @@ __global__ void createBouncingWorld(Hitable** dList, Hitable** dWorld, curandSta
   printf("hitable size: %d\n", count);
 }
 
-__global__ void destroyBouncingWorld(Hitable** dList, Hitable** dWorld)
-{
-  auto sdWorld = static_cast<HitableList*>(*dWorld);
-  for (int i = 0; i < sdWorld->mListSize; ++i)
-  {
-    delete *(dList + i);
-  }
-  delete *dWorld;
-}
-
 __global__ void createEarthWorld(
   Hitable** dList, Hitable** dWorld, curandState* state, cudaTextureObject_t texture)
 {
   dList[0] = new Sphere(glm::vec3(0, 0, 0), 1.0, new Lambertian(texture));
   *dWorld = new HitableList(dList, 1);
-}
-__global__ void destroyEarthWorld(Hitable** dList, Hitable** dWorld)
-{
-  auto sdWorld = static_cast<HitableList*>(*dWorld);
-  for (int i = 0; i < sdWorld->mListSize; ++i)
-  {
-    delete *(dList + i);
-  }
-  delete *dWorld;
 }
 
 __global__ void createQuadWorld(Hitable** dList, Hitable** dWorld)
@@ -158,7 +140,18 @@ __global__ void createQuadWorld(Hitable** dList, Hitable** dWorld)
     new Lambertian(glm::vec3(0.2, 0.8, 0.8)));
   *dWorld = new HitableList(dList, 5);
 }
-__global__ void destroyQuadWorld(Hitable** dList, Hitable** dWorld)
+
+__global__ void createCornellBoxWorld(Hitable** dList, Hitable** dWorld)
+{
+ dList[0] = new Quad(glm::vec3(555,0,0), glm::vec3(0,555,0), glm::vec3(0,0,555), new Lambertian(glm::vec3(.12, .45, .15)));
+ dList[1] = new Quad(glm::vec3(0,0,0), glm::vec3(0,555,0), glm::vec3(0,0,555), new Lambertian(glm::vec3(.65, .05, .05)));
+ dList[2] = new Quad(glm::vec3(343, 554, 332), glm::vec3(-130,0,0), glm::vec3(0,0,-105), new DiffuseLight(glm::vec3(1, 1, 1)));
+ dList[3] = new Quad(glm::vec3(0,0,0), glm::vec3(555,0,0), glm::vec3(0,0,555), new Lambertian(glm::vec3(.73, .73, .73)));
+ dList[4] = new Quad(glm::vec3(555,555,555), glm::vec3(-555,0,0), glm::vec3(0,0,-555), new Lambertian(glm::vec3(.73, .73, .73)));
+ dList[5] = new Quad(glm::vec3(0,0,555), glm::vec3(555,0,0), glm::vec3(0,555,0), new Lambertian(glm::vec3(.73, .73, .73)));
+ *dWorld = new HitableList(dList, 6);
+}
+__global__ void destroyWorld(Hitable** dList, Hitable** dWorld)
 {
   auto sdWorld = static_cast<HitableList*>(*dWorld);
   for (int i = 0; i < sdWorld->mListSize; ++i)
@@ -189,7 +182,7 @@ __global__ void renderInternal(Camera camera, ImageInfo imageInfo, glm::vec3 ray
     float x = (xIndex + curand_uniform(&states[randIndex])) / imageInfo.width;
     float y = (yIndex + curand_uniform(&states[randIndex])) / imageInfo.height;
     Ray ray = camera.getRay(x, y, &states[randIndex]);
-    c += color(&states[randIndex], ray, dWorld);
+    c += color(&states[randIndex], ray, dWorld, Material::Color(0.7, 0.8, 1.0));
   }
 
   c /= static_cast<float>(nsize);
@@ -235,9 +228,13 @@ struct RayTracer::Impl
     , d_create_world_state(nullptr)
     , mTexture(0)
   {
+    #if defined(CORNELL_BOX)
+    mCamera = std::make_shared<Camera>(
+      glm::vec3(27.0f, 41.0f, 13.0f), glm::vec3(1.0f, 0.0f, 0.0f), 90.0f, 1920.0 / 1080);
+    #else
     mCamera = std::make_shared<Camera>(
       glm::vec3(5.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 45.0f, 1920.0 / 1080);
-
+#endif
     cudaMalloc(&dList, sizeof(Hitable*) * HITABLE_SIZE);
     cudaMalloc(&dWorld, sizeof(Hitable*));
 
@@ -253,17 +250,13 @@ struct RayTracer::Impl
     createEarthWorld<<<1, 1>>>(dList, dWorld, d_create_world_state, texture);
 #elif defined(QUAD)
     createQuadWorld<<<1, 1>>>(dList, dWorld);
+    #elif defined(CORNELL_BOX)
+    createCornellBoxWorld<<<1, 1>>>(dList, dWorld);
 #endif
   }
   ~Impl()
   {
-#if defined(BOUNCING_SPHERE)
-    destroyBouncingWorld<<<1, 1>>>(dList, dWorld);
-#elif defined(EARTH_SPHERE)
-    destroyEarthWorld<<<1, 1>>>(dList, dWorld);
-#elif defined(QUAD)
-    destroyQuadWorld<<<1, 1>>>(dList, dWorld);
-#endif
+  destroyWorld<<<1, 1>>>(dList, dWorld);
 
     cudaFree(dList);
     cudaFree(dWorld);
