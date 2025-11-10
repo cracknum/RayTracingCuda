@@ -12,6 +12,7 @@
 #include "Lambertian.cuh"
 #include "Material.cuh"
 #include "Metal.cuh"
+#include "Quad.cuh"
 #include "Sphere.cuh"
 #include <cuda.h>
 #include <cuda_gl_interop.h>
@@ -20,9 +21,18 @@
 #include <device_launch_parameters.h>
 #include <iostream>
 
-#define HITABLE_SIZE (22 * 22 + 1 + 3)
 // #define BOUNCING_SPHERE
-#define EARTH_SPHERE
+// #define EARTH_SPHERE
+#define QUAD
+
+#if defined(BOUNCING_SPHERE)
+#define HITABLE_SIZE (22 * 22 + 1 + 3)
+#elif defined(EARTH_SPHERE)
+#define HITABLE_SIZE 1
+#elif defined(QUAD)
+#define HITABLE_SIZE 5
+#endif
+
 namespace Kernel
 {
 __device__ Material::Color color(curandState* state, const Ray& r, Hitable** dWorld)
@@ -134,6 +144,30 @@ __global__ void destroyEarthWorld(Hitable** dList, Hitable** dWorld)
   delete *dWorld;
 }
 
+__global__ void createQuadWorld(Hitable** dList, Hitable** dWorld)
+{
+  dList[0] = new Quad(glm::vec3(-3, -2, 5), glm::vec3(0, 0, -4), glm::vec3(0, 4, 0),
+    new Lambertian(glm::vec3(1.0, 0.2, 0.2)));
+  dList[1] = new Quad(glm::vec3(-2, -2, 0), glm::vec3(4, 0, 0), glm::vec3(0, 4, 0),
+    new Lambertian(glm::vec3(0.2, 1.0, 0.2)));
+  dList[2] = new Quad(glm::vec3(3, -2, 1), glm::vec3(0, 0, 4), glm::vec3(0, 4, 0),
+    new Lambertian(glm::vec3(0.2, 0.2, 1.0)));
+  dList[3] = new Quad(glm::vec3(-2, 3, 1), glm::vec3(4, 0, 0), glm::vec3(0, 0, 4),
+    new Lambertian(glm::vec3(1.0, 0.5, 0.0)));
+  dList[4] = new Quad(glm::vec3(-2, -3, 5), glm::vec3(4, 0, 0), glm::vec3(0, 0, -4),
+    new Lambertian(glm::vec3(0.2, 0.8, 0.8)));
+  *dWorld = new HitableList(dList, 5);
+}
+__global__ void destroyQuadWorld(Hitable** dList, Hitable** dWorld)
+{
+  auto sdWorld = static_cast<HitableList*>(*dWorld);
+  for (int i = 0; i < sdWorld->mListSize; ++i)
+  {
+    delete *(dList + i);
+  }
+  delete *dWorld;
+}
+
 __global__ void renderInternal(Camera camera, ImageInfo imageInfo, glm::vec3 rayOrigin,
   Hitable** dWorld, int nsize, curandState* states)
 {
@@ -215,9 +249,10 @@ struct RayTracer::Impl
     createBouncingWorld<<<1, 1>>>(dList, dWorld, d_create_world_state);
 #elif defined(EARTH_SPHERE)
     auto* textureLoader = TextureLoader::getInstance();
-    auto texture =
-      textureLoader->getTexture("../../res/earthmap.jpg");
+    auto texture = textureLoader->getTexture("../../res/earthmap.jpg");
     createEarthWorld<<<1, 1>>>(dList, dWorld, d_create_world_state, texture);
+#elif defined(QUAD)
+    createQuadWorld<<<1, 1>>>(dList, dWorld);
 #endif
   }
   ~Impl()
@@ -226,6 +261,8 @@ struct RayTracer::Impl
     destroyBouncingWorld<<<1, 1>>>(dList, dWorld);
 #elif defined(EARTH_SPHERE)
     destroyEarthWorld<<<1, 1>>>(dList, dWorld);
+#elif defined(QUAD)
+    destroyQuadWorld<<<1, 1>>>(dList, dWorld);
 #endif
 
     cudaFree(dList);

@@ -11,12 +11,14 @@ set(header_files
         include/HitableList.cuh
         include/AABB.cuh
         include/BvhNode.cuh
+        include/Quad.cuh
 )
 set(source_files
         src/Sphere.cu
         src/HitableList.cu
         src/AABB.cu
         src/BvhNode.cu
+        src/Quad.cu
 )
 
 set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-diag-suppress=20012,20014")
