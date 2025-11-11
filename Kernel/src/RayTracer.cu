@@ -69,7 +69,7 @@ __device__ Material::Color color(curandState* state, const Ray& r, Hitable** dWo
     }
   }
 
-  return Material::Color(0.0f, 0.0f, 0.0f);
+  return background;
 }
 
 __global__ void createBouncingWorld(Hitable** dList, Hitable** dWorld, curandState* state)
@@ -230,7 +230,7 @@ struct RayTracer::Impl
   {
     #if defined(CORNELL_BOX)
     mCamera = std::make_shared<Camera>(
-      glm::vec3(27.0f, 41.0f, 13.0f), glm::vec3(1.0f, 0.0f, 0.0f), 90.0f, 1920.0 / 1080);
+      glm::vec3(26.0f, 3.0f, 6.0f), glm::vec3(26.0f, 3.0f, 0.0f), 90.0f, 1920.0 / 1080);
     #else
     mCamera = std::make_shared<Camera>(
       glm::vec3(5.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 45.0f, 1920.0 / 1080);

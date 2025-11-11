@@ -21,10 +21,16 @@ __host__ __device__ Camera::Camera(
   , mRotateCenter(viewPoint)
   , mDefocusAngle(0)
   , mFocusDistance(10.0f)
+  , mForward(glm::vec3(0, 0, -1))
 {
   mRotateLength = glm::length(mOrigin - mRotateCenter);
-  mForward = glm::normalize(viewPoint - origin);
-  mRight = mOrientation * glm::cross(mUp, mForward);
+  auto forward = glm::normalize(viewPoint - origin);
+  mRight = glm::cross(forward, mUp);
+  mUp = glm::cross(mRight, forward);
+  mYaw = atan2f(forward.x, forward.z);
+  mPitch = asinf(forward.y);
+  mPitch = glm::clamp(mPitch, -89.9f, 89.9f);
+
   setAspect(aspect);
 }
 
